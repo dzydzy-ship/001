@@ -1,0 +1,1720 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>AI 商家营销运营助手</title>
+<style>
+  :root {
+    --bg: #f5f6f8; --card: #ffffff; --border: #e3e6ea; --text: #1f2733;
+    --muted: #6b7280; --brand: #2563eb; --brand-dark: #1d4ed8; --ok: #16a34a;
+    --warn: #d97706; --bad: #dc2626; --radius: 10px;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: -apple-system, "Segoe UI", "Microsoft YaHei", sans-serif;
+         background: var(--bg); color: var(--text); }
+  header { background: #fff; border-bottom: 1px solid var(--border); padding: 14px 24px;
+           display: flex; align-items: center; gap: 16px; }
+  header h1 { font-size: 18px; margin: 0; }
+  .tag { font-size: 12px; color: var(--muted); }
+  nav { display: flex; gap: 4px; padding: 0 24px; background: #fff; border-bottom: 1px solid var(--border); }
+  nav button { border: none; background: none; padding: 12px 16px; font-size: 14px; cursor: pointer;
+               color: var(--muted); border-bottom: 2px solid transparent; }
+  nav button.active { color: var(--brand); border-bottom-color: var(--brand); font-weight: 600; }
+  main { padding: 24px; max-width: 1100px; margin: 0 auto; }
+  .panel { display: none; }
+  .panel.active { display: block; }
+  .card { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius);
+          padding: 18px; margin-bottom: 16px; }
+  .card h2 { font-size: 15px; margin: 0 0 12px; }
+  .row { display: flex; gap: 12px; flex-wrap: wrap; }
+  .row > div { min-width: 0; }
+  .param-row { display: flex; gap: 10px; align-items: flex-end; flex-wrap: nowrap; margin-top: 8px; }
+  .param-row > div { flex: 1 1 0; min-width: 0; }
+  .param-row > div.param-btn { flex: 0 0 auto; }
+  .param-row label { margin: 0 0 6px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .param-row input { height: 36px; padding: 6px 8px; }
+  .param-row .btn { height: 36px; }
+  @media (max-width: 480px) { .param-row { flex-wrap: wrap; } .param-row > div { flex: 1 1 45%; } }
+  label { display: block; font-size: 13px; color: var(--muted); margin: 8px 0 4px; }
+  input, select, textarea { width: 100%; padding: 8px 10px; border: 1px solid var(--border);
+          border-radius: 6px; font-size: 14px; font-family: inherit; }
+  textarea { resize: vertical; min-height: 80px; }
+  button.btn { background: var(--brand); color: #fff; border: none; border-radius: 6px;
+          padding: 8px 16px; font-size: 14px; cursor: pointer; }
+  button.btn:hover { background: var(--brand-dark); }
+  button.btn.secondary { background: #fff; color: var(--brand); border: 1px solid var(--brand); }
+  button.btn.small { padding: 4px 10px; font-size: 12px; }
+  button.btn.danger { background: #fff5f5; color: #cf1322; border: 1px solid #ffa39e; }
+  button.btn.danger:hover { background: #ffe7e6; border-color: #ff7875; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--border); vertical-align: top; }
+  th { color: var(--muted); font-weight: 600; background: #fafbfc; }
+  .badge { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 12px; }
+  .badge.rising { background: #fee2e2; color: var(--bad); }
+  .badge.peak { background: #fef3c7; color: var(--warn); }
+  .badge.stable { background: #e5e7eb; color: var(--muted); }
+  .badge.declining { background: #e0e7ff; color: var(--brand); }
+  .badge.approved { background: #dcfce7; color: var(--ok); }
+  .badge.pending { background: #fef3c7; color: var(--warn); }
+  .badge.rejected { background: #fee2e2; color: var(--bad); }
+  .muted { color: var(--muted); }
+  .mono { font-family: ui-monospace, Consolas, monospace; font-size: 12px; white-space: pre-wrap; }
+  .score { font-weight: 700; font-size: 16px; }
+  .bar { height: 6px; background: #eef0f3; border-radius: 3px; overflow: hidden; margin-top: 4px; }
+  .bar > span { display: block; height: 100%; background: var(--brand); }
+  .notes li { font-size: 13px; margin: 2px 0; }
+  .hint { font-size: 12px; color: var(--muted); margin-top: 6px; }
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 0 12px; }
+  .modal-mask { position: fixed; inset: 0; background: rgba(0,0,0,.45); display: none;
+                align-items: center; justify-content: center; z-index: 50; padding: 20px; }
+  .modal { background: #fff; border-radius: 12px; padding: 20px; width: min(620px, 94vw);
+           max-height: 88vh; overflow: auto; box-shadow: 0 10px 40px rgba(0,0,0,.2); }
+  .modal h3 { margin: 0 0 14px; font-size: 16px; }
+  .modal .actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 16px; }
+
+  /* ---- 促销利润防护 ---- */
+  .chat { display: grid; grid-template-columns: 1.1fr 1fr; gap: 18px; align-items: start; }
+  @media (max-width: 900px) { .chat { grid-template-columns: 1fr; } }
+  .trace { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+  .trace .chip { font-size: 12px; padding: 2px 8px; border-radius: 999px;
+    background: rgba(37, 99, 235, .10); color: #1d4ed8; border: 1px solid rgba(37, 99, 235, .25); }
+  .trace .chip.warn { background: rgba(220, 38, 38, .10); color: #b91c1c; border-color: rgba(220, 38, 38, .25); }
+  .msgs { height: 400px; overflow: auto; padding: 4px 2px; border: 1px solid var(--border);
+          border-radius: 8px; background: #fcfcfd; margin: 10px 0; }
+  .msg { margin: 8px 10px; display: flex; }
+  .msg.me { justify-content: flex-end; }
+  .bubble { max-width: 88%; padding: 9px 12px; border-radius: 10px; font-size: 13.5px;
+            line-height: 1.7; white-space: pre-wrap; }
+  .msg.me .bubble { background: var(--brand); color: #fff; }
+  .msg.bot .bubble { background: #fff; border: 1px solid var(--border); }
+  .quick { display: flex; flex-wrap: wrap; gap: 8px; margin: 8px 0; }
+  .chip { font-size: 12px; padding: 4px 10px; border: 1px solid var(--border);
+          border-radius: 999px; background: #fff; cursor: pointer; color: var(--muted); }
+  .chip:hover { border-color: var(--brand); color: var(--brand); }
+  .kv { display: grid; grid-template-columns: 1fr auto; gap: 5px 12px; font-size: 13px; }
+  .kv .name { color: var(--muted); }
+  .kv .val { font-family: ui-monospace, Consolas, monospace; }
+  .neg { color: var(--bad); font-weight: 700; }
+  .pos { color: var(--ok); }
+  .verdict-risk { background: #fee2e2; color: var(--bad); }
+  .verdict-ok { background: #dcfce7; color: var(--ok); }
+  .banner { padding: 10px 14px; border-radius: 8px; font-size: 13px; margin-bottom: 14px; line-height: 1.7; }
+  .banner.risk { background: #fef2f2; border: 1px solid #fecaca; color: #991b1b; }
+  .banner.ok { background: #f0fdf4; border: 1px solid #bbf7d0; color: #166534; }
+  .paramgrid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 0 10px; }
+  .paramgrid label { margin: 6px 0 2px; }
+
+  /* ---- 批量导入 / 提取预览 / 批量运算 ---- */
+  .imp-card { border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px;
+              background: #fff; margin-bottom: 10px; }
+  .imp-card.off { opacity: .55; background: #fafafa; }
+  .imp-head { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .imp-head input[type=text] { flex: 1; min-width: 160px; padding: 5px 8px; font-size: 13px; }
+  .imp-fields { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 6px; }
+  .imp-fields label { margin: 0; font-size: 12px; }
+  .imp-fields input { width: 88px; padding: 4px 6px; font-size: 12px; }
+  .tagx { display: inline-block; font-size: 11px; padding: 1px 6px; border-radius: 999px;
+          background: #eef2ff; color: #3730a3; margin: 1px 3px 1px 0; }
+  .tagx.warn { background: #fef3c7; color: #92400e; }
+  .tagx.bad { background: #fee2e2; color: #991b1b; }
+  .conf { display: inline-block; min-width: 36px; text-align: center; border-radius: 6px;
+          padding: 1px 6px; font-size: 11px; }
+  .conf.hi { background: #dcfce7; color: #166534; }
+  .conf.mid { background: #fef9c3; color: #854d0e; }
+  .conf.lo { background: #fee2e2; color: #991b1b; }
+  .scroll-y { max-height: 560px; overflow: auto; }
+  .panel .card:last-child { margin-bottom: 0; }
+  .inline-note { font-size: 12px; color: var(--muted); }
+  .ok-line { color: var(--ok); font-weight: 600; }
+  .bad-line { color: var(--bad); font-weight: 600; }
+
+  /* ---- 整体协调：表格横向滚动 / 卡片节奏 / 按钮行 / 预览卡 ---- */
+  .tbl-wrap { width: 100%; overflow-x: auto; }
+  .tbl-wrap table { min-width: 560px; }
+  .tbl-wrap table th:first-child, .tbl-wrap table td:first-child { padding-left: 12px; }
+  #product_list table th:last-child, #product_list table td:last-child { white-space: nowrap; }
+  .card h2 { display: flex; align-items: center; gap: 8px; }
+  .card h2 .hint { font-weight: 400; margin: 0; }
+  .card > .btn-row { margin-top: 10px; }
+  .btn-row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+  .btn-row .hint { margin: 0; }
+  .imp-card { transition: border-color .15s; }
+  .imp-card:hover { border-color: #c7d2fe; }
+  .imp-card input[type=checkbox] { width: 16px; height: 16px; accent-color: var(--brand); }
+  .imp-card .imp-name { font-weight: 600; font-size: 14px; }
+  .price-band { display: inline-block; padding: 3px 10px; border-radius: 8px;
+                background: #eff6ff; color: #1e40af; font-weight: 700; font-size: 15px; }
+  .panel > .card + .card { margin-top: 0; }
+</style>
+</head>
+<body>
+<header>
+  <h1>AI 商家营销运营助手</h1>
+  <span class="tag">商品加工 · 利润防护 · 内容生成 · 热点看板 · 人工审核</span>
+</header>
+<nav>
+  <button data-panel="products" class="active">商品管理</button>
+  <button data-panel="profit">利润防护</button>
+  <button data-panel="content">内容生成</button>
+  <button data-panel="hotspots">热点看板</button>
+  <button data-panel="settings">设置</button>
+</nav>
+<main>
+
+  <!-- 商品管理 -->
+  <section id="products" class="panel active">
+    <div class="card" style="background:#f5f9ff;border-color:#cfe0ff">
+      <h2 style="margin-top:0;font-size:16px">💡 第一步：先算清楚该卖多少钱</h2>
+      <p class="hint" style="margin:6px 0 0">
+        建好商品、填上进货成本后，点商品列表里的「推荐售价」：
+        系统用「设置 → 计价口径」里的运费和佣金，加上你填的期望毛利率，
+        自动算出保本价、推荐价和建议区间——不用自己拿计算器倒推。
+      </p>
+    </div>
+    <div class="card">
+      <h2>新增商品（可粘贴原始资料，自动结构化提取）</h2>
+      <label>商品原始资料（自由文本）</label>
+      <textarea id="raw_material" placeholder="例如：316不锈钢保温杯，容量500ml，材质316不锈钢，保温时长12小时，便携防漏……"></textarea>
+      <div class="row" style="margin-top:8px">
+        <button class="btn secondary" onclick="previewExtract()">预览结构化提取</button>
+        <button class="btn" onclick="createProduct()">创建商品</button>
+      </div>
+      <div id="extract_preview" class="hint"></div>
+    </div>
+    <div class="card">
+      <div class="row" style="justify-content:space-between;align-items:center">
+        <h2 style="margin:0">批量导入（Excel 表格 → 自动识别 → 预览 → 确认入库）</h2>
+        <span class="tag">.xls / .xlsx · 单文件 ≤30MB</span>
+      </div>
+      <p class="hint">不用改表格：系统自己找表头、猜列义、识别「一个商品占几行」和合并单元格，<b>先把识别结果给您核对，确认后才入库</b>；不绑定任何一家表头，换张表照样能认。</p>
+      <div class="row" style="margin-top:10px;align-items:center">
+        <input type="file" id="import_file" accept=".xls,.xlsx" onchange="onImportFile()" style="flex:1" />
+        <button class="btn" id="import_parse_btn" onclick="previewImport()">解析预览</button>
+        <span id="import_status" class="inline-note"></span>
+      </div>
+      <div id="import_preview" style="margin-top:12px"></div>
+    </div>
+    <div class="card">
+      <div class="row" style="justify-content:space-between;align-items:center">
+        <h2 style="margin:0">商品列表</h2>
+        <button class="btn small secondary" onclick="gotoPanel('profit')">去「利润防护」批量运算 →</button>
+      </div>
+      <div id="product_list" class="scroll-y"></div>
+    </div>
+  </section>
+
+  <!-- 内容生成 -->
+  <section id="content" class="panel">
+    <div id="profit_banner"></div>
+    <div class="card">
+      <h2>按平台生成宣传内容</h2>
+      <div class="row">
+        <div style="flex:1"><label>商品</label><select id="gen_product" onchange="loadProfitBanner();loadProductBrief()"></select></div>
+        <div style="flex:1"><label>平台</label><select id="gen_platform" onchange="renderPlatformHint()"></select></div>
+        <div style="flex:1"><label>内容形式</label>
+          <select id="gen_type">
+            <option value="post">文案</option>
+            <option value="script">短视频脚本</option>
+          </select>
+        </div>
+      </div>
+      <div id="platform_hint" class="hint" style="margin-top:10px"></div>
+      <div class="row" style="margin-top:12px; align-items:center">
+        <button class="btn" onclick="generateContent()">生成内容</button>
+        <span id="gen_status" class="muted" style="margin-left:8px;font-size:12px"></span>
+      </div>
+    </div>
+    <div class="card" id="brief_card">
+      <div class="row" style="justify-content:space-between;align-items:center">
+        <h2 style="margin:0">产品分析（生成前）</h2>
+        <span class="hint">先看这份分析：生成内容只使用这里的事实，避免 AI 编造</span>
+      </div>
+      <div id="product_brief" class="hint" style="margin-top:10px">选择商品后自动分析。</div>
+    </div>
+    <div id="content_list"></div>
+  </section>
+
+  <!-- 热点看板：拆成「热点列表」与「AI 匹配机会」两个子页，各自独立占满一屏，避免内容沉底 -->
+  <section id="hotspots" class="panel">
+    <div class="row" style="gap:8px; margin-bottom:12px">
+      <button class="btn" id="hs_tab_btn_list" onclick="setHotspotTab('list')">🔥 热点列表</button>
+      <button class="btn secondary" id="hs_tab_btn_match" onclick="setHotspotTab('match')">🎯 AI 匹配机会</button>
+    </div>
+    <div id="hs_tab_list">
+      <div class="card">
+        <div class="row" style="align-items:center; justify-content:space-between">
+          <h2 style="margin:0">网络热点（含热度趋势）</h2>
+          <div class="row" style="align-items:center">
+            <button class="btn secondary" onclick="toggleHotspotForm()">添加热点</button>
+            <button class="btn" id="hs_refresh_btn" onclick="refreshHotspots()">立即采集</button>
+            <span id="hotspot_status" class="muted" style="margin-left:8px;font-size:12px"></span>
+          </div>
+        </div>
+        <div id="hotspot_form" style="display:none; margin-top:14px; padding:14px; border:1px solid var(--border); border-radius:8px; background:#fafbfc">
+          <div class="grid2">
+            <div><label>标题 *</label><input id="hs_title" /></div>
+            <div><label>分类</label><input id="hs_category" placeholder="如：游戏 / 食品" /></div>
+          </div>
+          <label>描述</label><textarea id="hs_description"></textarea>
+          <div class="grid2">
+            <div><label>关键词（逗号分隔）</label><input id="hs_keywords" /></div>
+            <div><label>来源链接（可选）</label><input id="hs_url" /></div>
+          </div>
+          <button class="btn" style="margin-top:8px" onclick="createHotspot()">保存热点</button>
+        </div>
+        <div id="hotspot_filters" class="row" style="margin-top:12px; flex-wrap:wrap; gap:6px"></div>
+        <div id="hotspot_sort" class="row" style="margin-top:8px; flex-wrap:wrap; gap:6px; align-items:center"></div>
+        <div id="hotspot_list" style="margin-top:12px"></div>
+      </div>
+    </div>
+    <div id="hs_tab_match" style="display:none">
+      <div class="card">
+        <div class="row" style="align-items:center; justify-content:space-between">
+          <h2 style="margin:0">AI 匹配机会（热点 ✕ 商品）</h2>
+          <div class="row" style="align-items:center">
+            <button class="btn" id="hs_match_btn" onclick="runMatching()">AI 匹配商品</button>
+            <span id="match_status" class="muted" style="margin-left:8px;font-size:12px"></span>
+          </div>
+        </div>
+        <p class="hint">先由程序按板块/关键词/商品标签筛出候选热点，再逐个商品交给大模型挑选真实可结合的机会卡（约 5~20 秒）。结果固定显示在本页顶部。</p>
+        <div id="match_result" style="margin-top:12px"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 促销利润防护 -->
+  <section id="profit" class="panel">
+    <div class="card">
+      <div class="row" style="justify-content:space-between;align-items:center">
+        <h2 style="margin:0">促销利润防护 · 对话式测算</h2>
+        <div class="row" style="align-items:center">
+          <span class="tag" id="pf_mode">模式加载中…</span>
+          <span class="tag" id="policy_line">口径加载中…</span>
+          <button class="btn small secondary" onclick="resetSession()">重置会话</button>
+        </div>
+      </div>
+      <div class="chat" style="margin-top:16px">
+        <div>
+          <div class="row">
+            <div style="flex:1"><label>商品</label><select id="pf_product" onchange="onPfProductChange()"></select></div>
+          </div>
+          <div class="msgs" id="pf_msgs"></div>
+          <div class="quick" id="pf_quick"></div>
+          <div class="row">
+            <div style="flex:1"><input id="pf_input" placeholder="例如：我打算上两件八折，再发 29 元券，卖 SR-72 会亏吗？" onkeydown="if(event.key==='Enter')sendMessage()" /></div>
+            <button class="btn" onclick="sendMessage()">发送</button>
+          </div>
+          <p class="hint">只读测算：不改价、不发券、不动活动。AI 只负责问你口径、挑工具、说人话，
+            每个数字都由测算引擎给出（接口返回里能看到它调了哪个工具）。</p>
+        </div>
+        <div>
+          <div id="pf_bill"><p class="muted">还没有账单。左边说一句话，例如"上两件八折，再发 29 元券"。</p></div>
+          <div id="pf_param" style="margin-top:14px"></div>
+          <div id="pf_options" style="margin-top:14px"></div>
+          <div class="card" style="margin-top:14px;background:#fbfcfe">
+            <h2 style="margin:0 0 4px;font-size:15px">全店体检</h2>
+            <div class="param-row">
+              <div><label>满件数</label><input id="scan_qty" type="number" min="1" value="2" /></div>
+              <div><label>折扣率</label><input id="scan_tier" type="number" step="0.01" placeholder="0.8 = 八折" value="0.8" /></div>
+              <div><label>券额(元)</label><input id="scan_coupon" type="number" step="1" value="29" /></div>
+              <div class="param-btn"><button class="btn" style="width:100%" onclick="runStoreScan()">按这套活动扫一遍</button></div>
+            </div>
+            <div id="scan_summary" class="hint">同一套活动铺到全店，看哪几款还赚得到钱、哪几款卖一件亏一件。</div>
+            <div id="pf_scan"></div>
+          </div>
+          <div class="card" style="margin-top:14px;background:#fbfcfe">
+            <h2 style="margin:0 0 4px;font-size:15px">批量运算（全店推荐售价 + 批量利润）</h2>
+            <p class="hint" style="margin:4px 0 0">和「推荐售价」同一个算法：成本 + 设置里的运费/佣金 + 你填的期望毛利率 → 每款的保本价与推荐价；再按上面的满件折扣和券，一次算全店利润。</p>
+            <div class="param-row">
+              <div><label>毛利率(%)</label><input id="batch_margin" type="number" step="1" value="20" /></div>
+              <div><label>满件数</label><input id="batch_qty" type="number" min="1" value="2" /></div>
+              <div><label>折扣率</label><input id="batch_tier" type="number" step="0.01" placeholder="0.8 = 八折" value="1" /></div>
+              <div><label>券额(元)</label><input id="batch_coupon" type="number" step="1" value="0" /></div>
+              <div class="param-btn"><button class="btn" style="width:100%" onclick="runBatchCalc()">批量运算</button></div>
+            </div>
+            <div id="batch_summary" class="hint">填好参数点「批量运算」：每款商品出保本价、推荐售价，并按上方活动算利润与风险。</div>
+            <div id="batch_table" class="scroll-y"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 设置：模型接入 + 计价口径 -->
+  <section id="settings" class="panel">
+    <div class="card">
+      <h2>① 大模型接入（只对本次运行有效）</h2>
+      <div class="row">
+        <div style="flex:1"><label>模型服务商</label><select id="llm_provider" onchange="onProviderChange()"></select></div>
+        <div style="flex:1"><label>模型名</label><input id="llm_model" placeholder="deepseek-chat" /></div>
+      </div>
+      <div class="row">
+        <div style="flex:1"><label>API Key（自己填，只存内存）</label><input id="llm_key" type="password" autocomplete="off" placeholder="粘贴服务商给的 Key" /></div>
+      </div>
+      <label>接口地址（切换服务商自动填充，一般不用改）</label>
+      <input id="llm_base" placeholder="https://api.deepseek.com/v1" />
+      <div id="llm_provider_note" class="hint"></div>
+      <div class="row" style="margin-top:10px">
+        <button class="btn secondary" onclick="testLLM()">测试连接</button>
+        <button class="btn" onclick="saveLLM()">保存并启用</button>
+        <button class="btn secondary" onclick="clearLLM()">清除（回 Mock）</button>
+      </div>
+      <div id="llm_status" class="hint">读取中…</div>
+      <p class="hint">Key 只在后端内存里使用，不写库、不写日志，重启服务即失效；页面只回显尾号。</p>
+    </div>
+    <div class="card">
+      <h2>② 计价口径（改完立即生效）</h2>
+      <div class="grid2">
+        <div><label>平台佣金率（%）</label><input id="pol_commission" type="number" step="0.1" /></div>
+        <div><label>佣金基数</label><select id="pol_base">
+          <option value="gmv_after_coupon">券后成交额（平台把券算作降价）</option>
+          <option value="gmv">券前成交额（券由商家自担）</option>
+        </select></div>
+        <div><label>买家运费（元）</label><input id="pol_ship" type="number" step="0.1" /></div>
+        <div><label>国内发货运费（元）</label><input id="pol_freightdom" type="number" step="0.1" /></div>
+        <div><label>毛利率红线（%）</label><input id="pol_floor" type="number" step="0.5" /></div>
+        <div><label>满 2 件折扣（0.8 = 八折）</label><input id="pol_tier2" type="number" step="0.01" /></div>
+        <div><label>满 3 件折扣</label><input id="pol_tier3" type="number" step="0.01" /></div>
+        <div><label>体检默认券面额（元）</label><input id="pol_coupon" type="number" step="1" /></div>
+        <div><label>优惠券由谁承担</label><select id="pol_borne">
+          <option value="merchant">商家承担</option>
+          <option value="platform">平台补贴</option>
+        </select></div>
+      </div>
+      <label>口径名称</label><input id="pol_name" />
+      <div class="row" style="margin-top:10px">
+        <button class="btn" onclick="savePolicy()">保存口径</button>
+        <button class="btn secondary" onclick="resetPolicy()">恢复默认</button>
+      </div>
+      <div id="pol_status" class="hint"></div>
+      <p class="hint">口径只影响之后的测算；已留痕的测算保留当时的入参快照，不会被改写——这正是可追溯的证据。</p>
+    </div>
+  </section>
+
+</main>
+
+<!-- 商品编辑弹窗 -->
+<div id="product_modal" class="modal-mask">
+  <div class="modal">
+    <h3>编辑商品</h3>
+    <input type="hidden" id="pe_id" />
+    <div class="grid2">
+      <div><label>名称</label><input id="pe_name" /></div>
+      <div><label>品牌</label><input id="pe_brand" /></div>
+    </div>
+    <div class="grid2">
+      <div><label>品类</label><input id="pe_category" /></div>
+      <div><label>品牌调性</label><input id="pe_tone" /></div>
+    </div>
+    <div class="grid2">
+      <div><label>价格（元）</label><input id="pe_price" type="number" step="0.01" /></div>
+      <div><label>成本（元）</label><input id="pe_cost" type="number" step="0.01" /></div>
+    </div>
+    <div class="grid2">
+      <div><label>跨国运费 / 件（元）</label><input id="pe_freight_intl" type="number" step="0.1" placeholder="留空 = 含在售价里" /></div>
+      <div><label>国内发货运费 / 单（元）</label><input id="pe_freight_dom" type="number" step="0.1" placeholder="留空 = 用全局口径" /></div>
+      <div><label>毛利率红线（%，留空 = 用全局）</label><input id="pe_floor" type="number" step="0.5" placeholder="例如 10" /></div>
+    </div>
+    <div id="pe_preview" class="hint"></div>
+    <label>卖点（每行一条）</label><textarea id="pe_points"></textarea>
+    <label>规格（JSON 键值对）</label><textarea id="pe_specs" class="mono"></textarea>
+    <label>目标用户（JSON）</label><textarea id="pe_audience" class="mono"></textarea>
+    <label>禁用表述（每行一条）</label><textarea id="pe_restrictions"></textarea>
+    <div class="actions">
+      <button class="btn secondary" onclick="closeModal('product_modal')">取消</button>
+      <button class="btn" onclick="saveProduct()">保存</button>
+    </div>
+  </div>
+</div>
+
+<!-- 推荐售价弹窗 -->
+<div id="price_modal" class="modal-mask">
+  <div class="modal">
+    <h3>推荐售价 · <span id="pm_name"></span> <span class="badge" style="background:#fdf0d5;color:#8a5b00">不含店内活动</span></h3>
+    <input type="hidden" id="pm_id" />
+    <div style="background:#fff8e6;border:1px solid #f0d38a;border-radius:8px;padding:10px 12px;margin:8px 0 12px;line-height:1.65">
+      <b>这个价格没算店内营销活动。</b>它只按「进货成本 + 运费 + 佣金 + 目标毛利率」反算单件标价，
+      <b>不含满件折扣、优惠券</b>，也不含退货率与广告费。活动叠加后真实利润会明显低——
+      要按活动算，去「利润防护」选这款商品、填上折扣与券再测。
+    </div>
+    <div class="grid2">
+      <div><label>进货成本（元/件）</label><input id="pm_cost" type="number" step="0.01" readonly /></div>
+      <div><label>期望毛利率（%）</label><input id="pm_margin" type="number" step="0.5" value="20" /></div>
+    </div>
+    <div id="pm_policy" class="hint">运费与佣金取自「设置 → 计价口径」</div>
+    <div class="row" style="margin-top:10px">
+      <button class="btn" onclick="calcRecommendPrice()">计算推荐价</button>
+      <button class="btn secondary" onclick="closeModal('price_modal')">关闭</button>
+    </div>
+    <div id="pm_result" style="margin-top:14px"><p class="muted">输入期望毛利率，点「计算推荐价」。</p></div>
+  </div>
+</div>
+
+<!-- 热点编辑弹窗 -->
+<div id="hotspot_modal" class="modal-mask">
+  <div class="modal">
+    <h3>编辑热点</h3>
+    <input type="hidden" id="he_id" />
+    <label>标题</label><input id="he_title" />
+    <div class="grid2">
+      <div><label>分类</label><input id="he_category" /></div>
+      <div><label>来源链接</label><input id="he_url" /></div>
+    </div>
+    <label>描述</label><textarea id="he_description"></textarea>
+    <label>关键词（逗号分隔）</label><input id="he_keywords" />
+    <div class="actions">
+      <button class="btn secondary" onclick="closeModal('hotspot_modal')">取消</button>
+      <button class="btn" onclick="saveHotspot()">保存</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const $ = (id) => document.getElementById(id);
+const API = '';
+let PRODUCTS = [];
+let HOTSPOTS = [];
+let HOTSPOT_CAT = '';
+let HOTSPOT_SORT = 'hot';       // hot=按热度；recent=按最近更新
+let NEW_HOTSPOTS = new Set();   // 本次采集新增的 id，用于 NEW 标记与「本次新增」筛选
+let URL_EXPANDED = new Set();
+
+async function api(path, opts = {}) {
+  const res = await fetch(API + path, {
+    headers: { 'Content-Type': 'application/json' },
+    ...opts,
+    body: opts.body !== undefined ? JSON.stringify(opts.body) : undefined,
+  });
+  if (!res.ok) throw new Error(await res.text());
+  const text = await res.text();
+  return text ? JSON.parse(text) : null;
+}
+
+// 导航
+function gotoPanel(name) {
+  document.querySelectorAll('nav button').forEach((b) => b.classList.toggle('active', b.dataset.panel === name));
+  document.querySelectorAll('.panel').forEach((p) => p.classList.toggle('active', p.id === name));
+  if (name === 'profit') loadProfitBanner();
+}
+document.querySelectorAll('nav button').forEach((btn) => {
+  btn.onclick = () => gotoPanel(btn.dataset.panel);
+});
+
+// 弹窗
+function closeModal(id) { $(id).style.display = 'none'; }
+document.querySelectorAll('.modal-mask').forEach((m) => {
+  m.addEventListener('click', (e) => { if (e.target === m) m.style.display = 'none'; });
+});
+
+// ---- 商品 ----
+function esc(s) {
+  return String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+}
+function confClass(v) { return v >= 0.9 ? 'hi' : v >= 0.7 ? 'mid' : 'lo'; }
+function fmtVal(v) {
+  if (v === null || v === undefined || v === '') return '<span class="muted">—</span>';
+  if (Array.isArray(v)) {
+    const items = v.filter((x) => x !== null && x !== undefined && x !== '');
+    return items.length ? items.map((x) => `<span class="tagx">${esc(x)}</span>`).join('') : '<span class="muted">—</span>';
+  }
+  if (typeof v === 'object') {
+    const keys = Object.keys(v).filter((k) => v[k] !== null && v[k] !== undefined && v[k] !== '' && (!Array.isArray(v[k]) || v[k].length));
+    if (!keys.length) return '<span class="muted">—</span>';
+    return keys.map((k) => `<span class="tagx">${esc(k)}：${esc(Array.isArray(v[k]) ? v[k].join('、') : v[k])}</span>`).join('');
+  }
+  return esc(v);
+}
+
+function previewExtract() {
+  const el = $('extract_preview');
+  el.innerHTML = '识别中…';
+  api('/products/extract', { method: 'POST', body: { raw_material: $('raw_material').value } })
+    .then((r) => { el.innerHTML = renderExtractPreview(r); })
+    .catch((e) => { el.innerHTML = '<span class="bad-line">错误：' + esc(e.message) + '</span>'; });
+}
+
+function renderExtractPreview(ex) {
+  const order = ['name', 'brand', 'category', 'price', 'cost_price', 'specs', 'selling_points', 'target_audience', 'evidence', 'restrictions', 'tags'];
+  const labels = { name: '商品名称', brand: '品牌', category: '品类', price: '售价', cost_price: '成本价', specs: '规格参数', selling_points: '核心卖点', target_audience: '目标用户', evidence: '证据材料', restrictions: '限制禁忌', tags: '自动标签' };
+  const rows = order.map((f) => {
+    const conf = ex.confidence && ex.confidence[f];
+    const src = (ex.field_sources && ex.field_sources[f]) || '';
+    const cls = (ex.classified && ex.classified[f]) || '';
+    const confHtml = (conf === null || conf === undefined || conf === 0)
+      ? '<span class="muted">—</span>'
+      : `<span class="conf ${confClass(conf)}">${Math.round(conf * 100)}%</span>`;
+    return `<tr><td><b>${labels[f]}</b>${cls ? `<br><span class="tagx">${esc(cls)}</span>` : ''}</td><td>${fmtVal(ex[f])}</td><td>${confHtml}<br><span class="inline-note">${esc(src)}</span></td></tr>`;
+  }).join('');
+  const roles = ex.price_roles || {};
+  const roleChips = Object.keys(roles).filter((k) => roles[k] !== null && roles[k] !== undefined)
+    .map((k) => `<span class="tagx">${esc(k)}：${roles[k]}</span>`).join('') || '<span class="muted">资料里没认出价格</span>';
+  const reviews = (ex.review || []).map((r) => `<li>${esc(r)}</li>`).join('');
+  return `<div style="margin-top:10px">
+    <div class="row" style="gap:6px;align-items:center"><b>价格识别：</b>${roleChips}</div>
+    <div class="scroll-y" style="margin-top:8px"><table class="preview-table">
+      <tr><th style="width:150px">字段（类别）</th><th>识别值</th><th style="width:120px">置信度 / 来源</th></tr>${rows}
+    </table></div>
+    ${reviews ? `<div class="hint" style="margin-top:8px"><b>待确认：</b><ul class="notes">${reviews}</ul></div>` : ''}
+  </div>`;
+}
+
+// ---- Excel 批量导入（通用解析：预览 → 核对 → 确认入库）----
+let IMPORT_PREVIEW = null;
+let IMPORT_SELECTED = new Set();
+
+function onImportFile() {
+  const f = $('import_file').files[0];
+  $('import_status').textContent = f ? `已选择：${f.name}（${(f.size / 1024).toFixed(0)} KB）` : '';
+  $('import_preview').innerHTML = '';
+  IMPORT_PREVIEW = null;
+}
+
+function previewImport() {
+  const f = $('import_file').files[0];
+  if (!f) { alert('先选择一个 Excel 文件'); return; }
+  const status = $('import_status');
+  const btn = $('import_parse_btn');
+  status.textContent = '解析中…（大表可能要几秒）';
+  btn.disabled = true;
+  const fd = new FormData();
+  fd.append('file', f);
+  fetch(API + '/products/import/preview', { method: 'POST', body: fd })
+    .then(async (res) => {
+      if (!res.ok) throw new Error(await res.text());
+      return res.json();
+    })
+    .then((data) => {
+      IMPORT_PREVIEW = data;
+      IMPORT_SELECTED = new Set(data.products.map((_, i) => i));
+      status.textContent = `识别到 ${data.products.length} 件商品 · 表型：${data.table_type || '-'} · 表头第 ${data.header_row || '-'} 行`;
+      $('import_preview').innerHTML = renderImportPreview(data);
+    })
+    .catch((e) => {
+      status.innerHTML = '<span class="bad-line">解析失败：' + esc(e.message) + '</span>';
+      $('import_preview').innerHTML = '';
+    })
+    .finally(() => { btn.disabled = false; });
+}
+
+function renderImportPreview(data) {
+  const cols = data.columns || {};
+  const colChips = Object.keys(cols).map((f) => `<span class="tagx">${esc(f)} ← ${esc(cols[f])}</span>`).join('');
+  const warns = (data.warnings || []).map((w) => `<li>${esc(w)}</li>`).join('');
+  const cards = data.products.map((p, i) => renderImportDraft(p, i)).join('');
+  const sel = IMPORT_SELECTED.size;
+  return `<div>
+    <div class="row" style="justify-content:space-between;align-items:center;gap:8px">
+      <div class="inline-note">文件：<b>${esc(data.filename)}</b> · 工作表：${esc((data.sheets || []).join('、') || '-')} · 表型：<b>${esc(data.table_type || '-')}</b> · 已选 <b id="imp_sel_count">${sel}</b> / ${data.products.length}</div>
+      <div class="row" style="gap:6px">
+        <button class="btn small secondary" onclick="toggleAllImport(true)">全选</button>
+        <button class="btn small secondary" onclick="toggleAllImport(false)">全不选</button>
+        <button class="btn small secondary" onclick="exportImportJSON()">导出 JSON</button>
+        <button class="btn small secondary" onclick="exportImportCSV()">导出 CSV</button>
+        <button class="btn small" onclick="confirmImport()">确认导入 <span id="imp_btn_count">${sel}</span> 件</button>
+      </div>
+    </div>
+    <div class="row" style="gap:6px;margin-top:8px"><span class="inline-note">列映射：</span>${colChips || '<span class="muted">未识别到列</span>'}</div>
+    ${warns ? `<div class="hint"><b>提示：</b><ul class="notes">${warns}</ul></div>` : ''}
+    <div class="scroll-y" style="margin-top:10px">${cards || '<p class="muted">这张表里没解析出商品（可能是空表或模板）。</p>'}</div>
+  </div>`;
+}
+
+function renderImportDraft(p, i) {
+  const conf = p.confidence || {};
+  const confChip = conf.name ? `<span class="conf ${confClass(conf.name)}">名称 ${Math.round(conf.name * 100)}%</span>` : '';
+  const miss = (p.missing || []).map((m) => `<span class="tagx warn">缺${esc(m)}</span>`).join('');
+  const warn = (p.warnings || []).map((m) => `<span class="tagx bad">${esc(m)}</span>`).join('');
+  const specs = Object.keys(p.specs || {}).filter((k) => p.specs[k]).slice(0, 8)
+    .map((k) => `<span class="tagx">${esc(k)}：${esc(p.specs[k])}</span>`).join('');
+  const points = (p.selling_points || []).slice(0, 4).map((s) => `<span class="tagx">${esc(s)}</span>`).join('');
+  const on = IMPORT_SELECTED.has(i);
+  return `<div class="imp-card ${on ? '' : 'off'}" id="imp_card_${i}">
+    <div class="imp-head">
+      <input type="checkbox" ${on ? 'checked' : ''} onchange="toggleImportDraft(${i}, this.checked)" style="width:auto" />
+      <span class="inline-note">#${i + 1}</span>
+      <input type="text" id="imp_name_${i}" value="${esc(p.name)}" />
+      ${confChip}
+    </div>
+    <div class="imp-fields">
+      <label>成本 <input type="number" id="imp_cost_${i}" value="${p.cost_price ?? ''}" /></label>
+      <label>售价 <input type="number" id="imp_price_${i}" value="${p.price ?? ''}" /></label>
+      <label>品类 <input type="text" id="imp_cat_${i}" value="${esc(p.category)}" style="width:110px" /></label>
+      <span class="inline-note">来源：${esc(p.source_sheet)} 第 ${p.source_row} 行</span>
+    </div>
+    <div style="margin-top:6px">${specs}${points}${miss}${warn}</div>
+  </div>`;
+}
+
+function toggleImportDraft(i, on) {
+  if (on) IMPORT_SELECTED.add(i); else IMPORT_SELECTED.delete(i);
+  const card = $(`imp_card_${i}`);
+  if (card) card.classList.toggle('off', !on);
+  updateImportCount();
+}
+function toggleAllImport(on) {
+  if (!IMPORT_PREVIEW) return;
+  IMPORT_SELECTED = on ? new Set(IMPORT_PREVIEW.products.map((_, i) => i)) : new Set();
+  $('import_preview').innerHTML = renderImportPreview(IMPORT_PREVIEW);
+}
+function updateImportCount() {
+  const n = IMPORT_SELECTED.size;
+  if ($('imp_sel_count')) $('imp_sel_count').textContent = n;
+  if ($('imp_btn_count')) $('imp_btn_count').textContent = n;
+}
+function collectImportDrafts() {
+  if (!IMPORT_PREVIEW) return [];
+  return [...IMPORT_SELECTED].sort((a, b) => a - b).map((i) => {
+    const p = IMPORT_PREVIEW.products[i];
+    const draft = JSON.parse(JSON.stringify(p));
+    draft.name = $(`imp_name_${i}`).value.trim();
+    draft.category = $(`imp_cat_${i}`).value.trim();
+    const cost = $(`imp_cost_${i}`).value;
+    const price = $(`imp_price_${i}`).value;
+    draft.cost_price = cost === '' ? null : parseFloat(cost);
+    draft.price = price === '' ? null : parseFloat(price);
+    draft.missing = (p.missing || []).filter((m) => !((m === '成本价' && draft.cost_price != null) || (m === '售价' && draft.price != null)));
+    return draft;
+  });
+}
+function confirmImport() {
+  const products = collectImportDrafts();
+  if (!products.length) { alert('请先勾选要导入的商品'); return; }
+  if (!confirm(`确认把 ${products.length} 件商品导入商品库？（同名的会跳过）`)) return;
+  const btn = $('import_parse_btn');
+  btn.disabled = true;
+  api('/products/import/confirm', { method: 'POST', body: { products, create_costs: true } })
+    .then((r) => {
+      $('import_status').innerHTML = `<span class="ok-line">导入完成：新增 ${r.created} 件` + (r.duplicated ? `，同名跳过 ${r.duplicated} 件` : '') + (r.skipped ? `，无名称跳过 ${r.skipped} 件` : '') + '</span>';
+      IMPORT_PREVIEW = null;
+      IMPORT_SELECTED = new Set();
+      $('import_preview').innerHTML = '<p class="hint">导入完成。可去「利润防护 → 批量运算」一次算全店推荐售价与活动利润。</p>';
+      loadProducts();
+    })
+    .catch((e) => alert('导入失败：' + e.message))
+    .finally(() => { btn.disabled = false; });
+}
+function downloadBlob(content, filename, type) {
+  const blob = new Blob([content], { type });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = filename;
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+}
+function exportImportJSON() {
+  const products = collectImportDrafts();
+  if (!products.length) { alert('没有可导出的商品'); return; }
+  downloadBlob(JSON.stringify({ filename: IMPORT_PREVIEW.filename, table_type: IMPORT_PREVIEW.table_type, products }, null, 2),
+    '导入预览.json', 'application/json');
+}
+function exportImportCSV() {
+  const products = collectImportDrafts();
+  if (!products.length) { alert('没有可导出的商品'); return; }
+  const head = ['名称', '品类', '成本价', '售价', '规格', '卖点', '缺失', '来源表', '来源行'];
+  const cell = (v) => `"${String(v == null ? '' : v).replace(/"/g, '""')}"`;
+  const lines = [head.map(cell).join(',')];
+  products.forEach((p) => {
+    lines.push([p.name, p.category, p.cost_price, p.price,
+      Object.entries(p.specs || {}).map(([k, v]) => `${k}:${v}`).join(' / '),
+      (p.selling_points || []).join(' / '), (p.missing || []).join('、'), p.source_sheet, p.source_row]
+      .map(cell).join(','));
+  });
+  downloadBlob('\ufeff' + lines.join('\r\n'), '导入预览.csv', 'text/csv;charset=utf-8');
+}
+
+// ---- 利润防护：批量运算（全店推荐售价 + 批量利润）----
+function runBatchCalc() {
+  const body = {
+    margin: parseFloat($('batch_margin').value || '20'),
+    qty: parseInt($('batch_qty').value || '2', 10),
+    tier_rate: parseFloat($('batch_tier').value || '1'),
+    coupon: parseFloat($('batch_coupon').value || '0'),
+  };
+  $('batch_summary').textContent = '计算中…';
+  $('batch_table').innerHTML = '';
+  api('/products/batch-calc', { method: 'POST', body })
+    .then((r) => renderBatchCalc(r))
+    .catch((e) => { $('batch_summary').innerHTML = '<span class="bad-line">批量运算失败：' + esc(e.message) + '</span>'; });
+}
+
+function renderBatchCalc(r) {
+  const s = r.summary || {};
+  const act = s.has_activity;
+  $('batch_summary').innerHTML = `共 ${s.total} 款：可算 <b>${s.ok}</b> 款，缺成本 <b>${s.missing_cost}</b> 款`
+    + (act ? ` · 活动：满 ${r.policy.qty} 件 ${Math.round(r.policy.tier_rate * 1000) / 1000 * 10} 折 + 券 ${r.policy.coupon} 元` : ' · 未设活动（只算推荐售价）');
+  const head = `<tr><th>商品</th><th>成本</th><th>标价</th><th>保本价</th><th>推荐售价</th><th>建议区间</th>${act ? '<th>活动后每件利润</th><th>利润率</th>' : ''}<th>提示</th></tr>`;
+  const rows = (r.rows || []).map((p) => {
+    if (p.status !== 'ok') {
+      return `<tr><td><b>${esc(p.name)}</b></td><td>${p.cost ?? '-'}</td><td>${p.price ?? '-'}</td><td colspan="${act ? 6 : 4}" class="muted">${esc(p.message)}</td></tr>`;
+    }
+    const a = p.activity || {};
+    const thin = act && a.margin != null && a.margin < 10;
+    const warn = (a.warnings || []).map((w) => `<span class="tagx bad">${esc(w)}</span>`).join('');
+    return `<tr><td><b>${esc(p.name)}</b></td><td>${p.cost ?? '-'}</td><td>${p.price ?? '-'}</td><td>${p.breakeven ?? '-'}</td><td><b>${p.recommend ?? '-'}</b></td><td>${(p.band || []).join(' ~ ')}</td>`
+      + (act ? `<td class="${a.per_unit != null && a.per_unit < 0 ? 'neg' : ''}">${a.per_unit ?? '-'}</td><td>${a.margin != null ? a.margin + '%' : '-'}${thin ? ' <span class="tagx warn">薄</span>' : ''}</td>` : '')
+      + `<td>${warn}</td></tr>`;
+  }).join('');
+  $('batch_table').innerHTML = `<div class="tbl-wrap"><table style="margin-top:8px">${head}${rows}</table></div>`;
+}
+function createProduct() {
+  const body = { raw_material: $('raw_material').value };
+  if (!$('raw_material').value.trim()) {
+    body.name = prompt('未填写原始资料，请输入商品名称：') || '';
+  }
+  api('/products', { method: 'POST', body })
+    .then(() => { $('raw_material').value = ''; loadProducts(); })
+    .catch((e) => alert('创建失败：' + e.message));
+}
+function loadProducts() {
+  api('/products').then((items) => {
+    PRODUCTS = items || [];
+    if (!items || !items.length) { $('product_list').innerHTML = '<p class="muted">暂无商品</p>'; }
+    else {
+      $('product_list').innerHTML = '<div class="tbl-wrap"><table><tr><th>序号</th><th>名称</th><th>品类</th><th>卖点</th><th>标价</th><th>单件利润</th><th>操作</th></tr>' +
+        items.map((p, i) => `<tr><td>#${i + 1}</td><td><b>${p.name}</b><br><span class="muted">${p.brand}</span></td><td>${p.category||'-'}</td><td>${(p.selling_points||[]).join('、')||'-'}</td><td>${p.price??'-'}</td><td id="pfit_${p.id}" class="muted">…</td><td><button class="btn small" onclick="openProductEdit(${p.id})">编辑</button> <button class="btn small secondary" title="只按成本与目标毛利率反算，不含店内满件折扣与优惠券" onclick="openPriceRecommend(${p.id})">推荐售价</button> <button class="btn small danger" onclick="deleteProduct(${p.id})">删除</button></td></tr>`).join('') + '</table></div>';
+    }
+    (items || []).forEach((p) => fillProductProfit(p));
+    $('gen_product').innerHTML = (items || []).map((p) => `<option value="${p.id}">${p.name}</option>`).join('');
+    $('pf_product').innerHTML = (items || []).map((p) => `<option value="${p.id}">${p.name}${p.cost_price == null ? '（缺成本）' : ''}</option>`).join('');
+    loadProfitBanner();
+    loadProductBrief();
+  });
+}
+function openProductEdit(id) {
+  const p = PRODUCTS.find((x) => x.id === id);
+  if (!p) return;
+  $('pe_id').value = p.id;
+  $('pe_name').value = p.name || '';
+  $('pe_brand').value = p.brand || '';
+  $('pe_category').value = p.category || '';
+  $('pe_price').value = p.price ?? '';
+  $('pe_cost').value = p.cost_price ?? '';
+  $('pe_points').value = (p.selling_points || []).join('\n');
+  $('pe_specs').value = JSON.stringify(p.specs || {});
+  $('pe_audience').value = JSON.stringify(p.target_audience || {});
+  $('pe_tone').value = p.brand_tone || '';
+  $('pe_restrictions').value = (p.restrictions || []).join('\n');
+  $('pe_freight_intl').value = '';
+  $('pe_freight_dom').value = '';
+  $('pe_floor').value = '';
+  $('pe_preview').textContent = '…';
+  $('product_modal').style.display = 'flex';
+  refreshProductCost(p.id);
+  previewProductProfit(p.id);
+}
+function saveProduct() {
+  const id = $('pe_id').value;
+  let specs = {}, audience = {};
+  try { specs = JSON.parse($('pe_specs').value.trim() || '{}'); } catch (e) { alert('规格 JSON 格式错误'); return; }
+  try { audience = JSON.parse($('pe_audience').value.trim() || '{}'); } catch (e) { alert('目标用户 JSON 格式错误'); return; }
+  const body = {
+    name: $('pe_name').value.trim(),
+    brand: $('pe_brand').value.trim(),
+    category: $('pe_category').value.trim(),
+    price: $('pe_price').value === '' ? null : parseFloat($('pe_price').value),
+    cost_price: $('pe_cost').value === '' ? null : parseFloat($('pe_cost').value),
+    selling_points: $('pe_points').value.split('\n').map((s) => s.trim()).filter(Boolean),
+    specs,
+    target_audience: audience,
+    brand_tone: $('pe_tone').value.trim(),
+    restrictions: $('pe_restrictions').value.split('\n').map((s) => s.trim()).filter(Boolean),
+  };
+  const numOrNull = (v) => (v === '' ? null : parseFloat(v));
+  const costBody = {
+    unit_cost: body.cost_price,
+    freight_intl: numOrNull($('pe_freight_intl').value),
+    freight_dom: numOrNull($('pe_freight_dom').value),
+    profit_floor_pct: numOrNull($('pe_floor').value),
+  };
+  api(`/products/${id}`, { method: 'PUT', body })
+    .then(() => api(`/products/${id}/cost`, { method: 'PUT', body: costBody }))
+    .then(() => { closeModal('product_modal'); loadProducts(); })
+    .catch((e) => alert('保存失败：' + e.message));
+}
+function deleteProduct(id) {
+  if (!confirm('确定删除该商品？')) return;
+  api(`/products/${id}`, { method: 'DELETE' }).then(loadProducts).catch((e) => alert('删除失败：' + e.message));
+}
+
+// ---- 推荐售价 ----
+function openPriceRecommend(id) {
+  const p = PRODUCTS.find((x) => x.id === id);
+  if (!p) return;
+  $('pm_id').value = p.id;
+  $('pm_name').textContent = p.name || '';
+  $('pm_margin').value = 20;
+  $('pm_result').innerHTML = '<p class="muted">输入期望毛利率，点「计算推荐价」。</p>';
+  $('price_modal').style.display = 'flex';
+  api('/products/' + id + '/cost')
+    .then((r) => {
+      const eff = (r && r.effective) || {};
+      $('pm_cost').value = eff.unit_cost == null ? '' : eff.unit_cost;
+      const fd = eff.freight_dom == null ? '-' : eff.freight_dom;
+      const fi = eff.freight_intl == null ? 0 : eff.freight_intl;
+      $('pm_policy').textContent = '运费：国内 ' + fd + ' 元/单、跨国 ' + fi + ' 元/件；佣金率取「设置 → 计价口径」。';
+      if (eff.unit_cost == null) {
+        $('pm_result').innerHTML = '<p style="color:#c0392b">这款商品还没有进货成本，请先在「编辑商品」里填上。</p>';
+      }
+    })
+    .catch((e) => { $('pm_result').innerHTML = '<p style="color:#c0392b">读取成本失败：' + e.message + '</p>'; });
+}
+function calcRecommendPrice() {
+  const id = $('pm_id').value;
+  const margin = Number($('pm_margin').value);
+  if (!(margin >= 0 && margin < 100)) { alert('期望毛利率应在 0~100% 之间'); return; }
+  $('pm_result').innerHTML = '<p class="muted">计算中…</p>';
+  api('/products/' + id + '/recommend-price?margin=' + encodeURIComponent(margin))
+    .then((r) => { renderRecommend(r); })
+    .catch((e) => { $('pm_result').innerHTML = '<p style="color:#c0392b">' + e.message + '</p>'; });
+}
+function renderRecommend(r) {
+  const bd = r['成本拆解'] || {};
+  const row = (k, v) => '<tr><td>' + k + '</td><td>' + v + '</td></tr>';
+  const range = r['建议区间'] || [r['推荐售价'], r['推荐售价']];
+  $('pm_result').innerHTML =
+    '<div class="card" style="background:#f7fbff;border-color:#cfe0ff">' +
+      '<div class="row" style="justify-content:space-between;align-items:baseline">' +
+        '<div><div class="muted">保本价</div><div style="font-size:20px">¥' + r['保本价'] + '</div></div>' +
+        '<div><div class="muted">推荐售价</div><div style="font-size:26px;font-weight:700;color:#1a6bd8">¥' + r['推荐售价'] + '</div></div>' +
+        '<div><div class="muted">建议区间</div><div style="font-size:16px">¥' + range[0] + ' ~ ¥' + range[1] + '</div></div>' +
+      '</div>' +
+      '<p class="hint">按期望毛利率 ' + r['期望毛利率'] + '%，以推荐价实测的利润率是 ' + r['实际毛利率'] + '%。</p>' +
+      '<table style="margin-top:8px"><tr><th>成本项</th><th>金额 / 比例</th></tr>' +
+        row('进货成本', '¥' + bd['进货成本']) +
+        row('国内运费', '¥' + bd['国内运费']) +
+        row('跨国运费', '¥' + bd['跨国运费']) +
+        row('平台佣金率', bd['平台佣金率'] + '%') +
+        row('买家运费', '¥' + bd['买家运费']) +
+      '</table>' +
+      '<p class="hint" style="color:#8a5b00;background:#fff8e6;border:1px solid #f0d38a;border-radius:6px;padding:8px 10px;margin-top:10px">' +
+        '⚠ 上表是<b>单件、无活动</b>的价。真卖了要叠满件折扣和券，利润会比这低——点右边按钮按活动验算。' +
+      '</p>' +
+      '<div class="row" style="margin-top:10px">' +
+        '<button class="btn small" onclick="closeModal(\'price_modal\'); jumpToProfit(' + Number($('pm_id').value) + ')">去「利润防护」按活动验算</button>' +
+        '<button class="btn small secondary" onclick="applyRecommendPrice(' + r['推荐售价'] + ')">应用到标价</button>' +
+        '<span class="hint" style="margin-left:8px">只写入本页商品标价，不改店铺后台</span>' +
+      '</div>' +
+    '</div>';
+}
+function applyRecommendPrice(price) {
+  const id = Number($('pm_id').value);
+  const p = PRODUCTS.find((x) => x.id === id);
+  if (!p) return;
+  const body = {
+    name: p.name || '', brand: p.brand || '', category: p.category || '',
+    price: price, cost_price: p.cost_price ?? null,
+    selling_points: p.selling_points || [], specs: p.specs || {},
+    target_audience: p.target_audience || {}, brand_tone: p.brand_tone || '',
+    restrictions: p.restrictions || [],
+  };
+  api('/products/' + id, { method: 'PUT', body })
+    .then(() => { closeModal('price_modal'); loadProducts(); })
+    .catch((e) => alert('应用失败：' + e.message));
+}
+
+// ---- 内容 ----
+let PLATFORMS = [];
+function platformName(key) {
+  const p = PLATFORMS.find((x) => x.key === key);
+  return p ? p.name : key;
+}
+function loadPlatforms() {
+  api('/content/platforms').then((ps) => {
+    PLATFORMS = ps || [];
+    $('gen_platform').innerHTML = ps.map((p) => `<option value="${p.key}">${p.name}（${p.type}）</option>`).join('');
+    renderPlatformHint();
+  });
+}
+function currentPlatform() {
+  const key = $('gen_platform').value;
+  return PLATFORMS.find((p) => p.key === key) || null;
+}
+function renderPlatformHint() {
+  const p = currentPlatform();
+  const el = $('platform_hint');
+  if (!el) return;
+  if (!p) { el.innerHTML = ''; return; }
+  const metrics = (p.core_metrics || []).map((m) => `<span class="tag">${m}</span>`).join(' ');
+  const structs = (p.structures || []).join(' → ');
+  el.innerHTML = `<b>${p.name}算法要点：</b>${p.algorithm || ''}<br>` +
+    `<b>核心指标：</b>${metrics}<br>` +
+    `<b>内容骨架：</b>${structs}　<b>标题≤</b>${p.title_max_length}字　<b>标签≤</b>${p.tags_max}`;
+  loadProductBrief();
+}
+function loadProductBrief() {
+  const pid = +$('gen_product').value;
+  const box = $('product_brief');
+  if (!box) return;
+  if (!pid) { box.innerHTML = '<span class="muted">请先选择商品</span>'; return; }
+  box.innerHTML = '<span class="muted">分析中…</span>';
+  const platform = $('gen_platform').value || '';
+  api('/content/analyze', { method: 'POST', body: { product_id: pid, platform } })
+    .then((b) => renderProductBrief(b))
+    .catch((e) => { box.innerHTML = '<span style="color:#c0392b">分析失败：' + e.message + '</span>'; });
+}
+function briefChips(arr) {
+  arr = arr || [];
+  if (!arr.length) return '<span class="muted">—</span>';
+  return arr.map((x) => `<span class="tag">${x}</span>`).join(' ');
+}
+function renderProductBrief(b) {
+  const box = $('product_brief');
+  if (!box) return;
+  const angle = b.current_angle || (b.angles || {})[$('gen_platform').value] || '';
+  const gaps = (b.gaps || []).length
+    ? `<div style="margin-top:8px;color:#c0392b"><b>资料缺口（生成时会弱化，建议补全）：</b>${b.gaps.join('、')}</div>`
+    : '<div style="margin-top:8px;color:#1a7f37"><b>资料完整：</b>名称/价格/卖点/人群/规格齐备</div>';
+  box.innerHTML =
+    `<div><b>${b.name || '（未命名）'}</b>　品类：${b.category || '—'}　标价：${b.price != null ? '¥' + b.price : '未填'}` +
+    (b.promotion ? `　促销：${b.promotion}` : '') + `</div>` +
+    `<div style="margin-top:8px"><b>核心卖点：</b>${briefChips(b.core_points)}</div>` +
+    `<div style="margin-top:6px"><b>目标人群：</b>${briefChips((b.audience || {})['描述'])}</div>` +
+    `<div style="margin-top:6px"><b>使用场景：</b>${briefChips(b.scenes)}</div>` +
+    `<div style="margin-top:6px"><b>用户痛点：</b>${briefChips(b.pain_points)}</div>` +
+    `<div style="margin-top:6px"><b>证据/背书：</b>${briefChips(b.evidence)}</div>` +
+    `<div style="margin-top:6px"><b>限制/禁忌：</b>${briefChips(b.restrictions)}</div>` +
+    (angle ? `<div style="margin-top:8px"><b>本平台切入角度：</b>${angle}</div>` : '') +
+    gaps;
+}
+function generateContent() {
+  const body = { product_id: +$('gen_product').value, platform: $('gen_platform').value, content_type: $('gen_type').value };
+  const st = $('gen_status');
+  if (st) { st.textContent = '分析产品并生成中…（约 10~30 秒）'; st.style.color = '#666'; }
+  api('/content/generate', { method: 'POST', body })
+    .then(() => {
+      if (st) { st.textContent = '生成完成'; st.style.color = '#1a7f37'; }
+      loadContent();
+    })
+    .catch((e) => {
+      if (st) { st.textContent = '生成失败：' + e.message; st.style.color = '#c0392b'; }
+      alert('生成失败：' + e.message);
+    });
+}
+function loadContent() {
+  api('/content').then((items) => {
+    if (!items.length) { $('content_list').innerHTML = ''; return; }
+    $('content_list').innerHTML = items.map((c) => {
+      const audit = c.audit_result || {};
+      const fact = audit.fact_check || {};
+      const notes = (audit.notes || []).map((n) => {
+        const cls = n.indexOf('【事实】') === 0 ? 'style="color:#c0392b"'
+          : (n.indexOf('【提示】') === 0 ? 'style="color:#a05a00"' : '');
+        return `<li ${cls}>${n}</li>`;
+      }).join('');
+      const factBadge = fact.passed === false
+        ? '<span class="badge rejected">事实校验未通过</span>'
+        : (fact.passed === true ? '<span class="badge approved">事实校验通过</span>' : '');
+      const script = (c.script || []).map((s) => `<li><b>${s.scene}</b>：${s.text} <span class="muted">(${s.note})</span></li>`).join('');
+      return `<div class="card"><div class="row" style="justify-content:space-between;align-items:center">
+        <h2 style="margin:0">#${c.id} · ${platformName(c.platform)} · ${c.content_type} · <span class="badge ${c.status}">${c.status}</span> ${factBadge}</h2>
+        <div class="row">${c.status === 'pending' ? `<button class="btn small" onclick="reviewContent(${c.id},'approved')">通过</button> <button class="btn small secondary" onclick="reviewContent(${c.id},'rejected')">驳回</button> ` : ''}<button class="btn small danger" onclick="deleteContent(${c.id})">删除</button></div>
+      </div>
+      <p><b>标题：</b>${c.title}</p>
+      <p class="mono">${c.body}</p>
+      ${script ? `<p><b>脚本：</b></p><ul>${script}</ul>` : ''}
+      ${c.tags && c.tags.length ? `<p><b>标签：</b>${c.tags.map(t=>'#'+t).join(' ')}</p>` : ''}
+      <p><b>引导：</b>${c.cta||'-'}</p>
+      <div><b>校验：</b><ul class="notes">${notes}</ul></div>
+      </div>`;
+    }).join('');
+  });
+}
+function reviewContent(id, status) {
+  api(`/content/${id}/review`, { method: 'POST', body: { status } }).then(loadContent);
+}
+function deleteContent(id) {
+  if (!confirm('确定删除该内容？')) return;
+  api(`/content/${id}`, { method: 'DELETE' }).then(loadContent).catch((e) => alert('删除失败：' + e.message));
+}
+
+// ---- 热点 ----
+let HS_TAB = 'list';
+function setHotspotTab(tab) {
+  HS_TAB = tab;
+  const list = $('hs_tab_list');
+  const match = $('hs_tab_match');
+  if (list) list.style.display = tab === 'match' ? 'none' : 'block';
+  if (match) match.style.display = tab === 'match' ? 'block' : 'none';
+  const bl = $('hs_tab_btn_list');
+  const bm = $('hs_tab_btn_match');
+  if (bl) bl.classList.toggle('secondary', tab === 'match');
+  if (bm) bm.classList.toggle('secondary', tab !== 'match');
+  if (tab === 'match' && !$('match_result').innerHTML) {
+    $('match_result').innerHTML = '<p class="muted">点右上角「AI 匹配商品」生成机会卡；结果会固定显示在这里。</p>';
+  }
+}
+function trendBadge(t) { return `<span class="badge ${t}">${({rising:'上升',peak:'见顶',stable:'平稳',declining:'降温'}[t]||t)}</span>`; }
+function refreshHotspots() {
+  const st = $('hotspot_status');
+  const btn = $('hs_refresh_btn');
+  const beforeIds = new Set(HOTSPOTS.map((h) => h.id));
+  const orig = btn ? btn.textContent : '';
+  if (btn) { btn.disabled = true; btn.textContent = '采集中…'; }
+  if (st) { st.textContent = '正在从各平台拉取热榜（约 5~10 秒）…'; st.style.color = '#666'; }
+  api('/hotspots/refresh', { method: 'POST' })
+    .then((r) => {
+      const d = r || {};
+      const parts = [];
+      if (typeof d.new === 'number') parts.push('新增 ' + d.new + ' 条');
+      if (typeof d.updated === 'number') parts.push('更新 ' + d.updated + ' 条');
+      if (!parts.length) parts.push('处理 ' + ((d.collected) ?? 0) + ' 条');
+      if (d.running) {
+        if (st) { st.textContent = '上一次采集还在进行中，请等几秒后再点一次'; st.style.color = '#a05a00'; }
+        return null;
+      }
+      if (st) {
+        st.textContent = '采集完成：' + parts.join(' · ') + (typeof d.total === 'number' ? '（库中共 ' + d.total + ' 条）' : '');
+        if (d.new === 0 && d.updated > 0) st.textContent += '，本次无新增条目（热榜内容与库中重复），已刷新热度与更新时间';
+        st.style.color = '#1a7f37';
+      }
+      return loadHotspots().then(() => {
+        NEW_HOTSPOTS = new Set(HOTSPOTS.filter((h) => !beforeIds.has(h.id)).map((h) => h.id));
+        renderHotspotFilters();
+        renderHotspots();
+        if (NEW_HOTSPOTS.size && st) st.textContent += '，其中 ' + NEW_HOTSPOTS.size + ' 条标为 NEW';
+      });
+    })
+    .catch((e) => {
+      const msg = String((e && e.message) || e);
+      const hint = /Failed to fetch|NetworkError|Load failed|无法连接/.test(msg)
+        ? '无法连接本地服务：请确认网站仍在运行（若刚重启过，刷新页面后重试）'
+        : '采集失败：' + msg;
+      if (st) { st.textContent = hint; st.style.color = '#c00'; }
+    })
+    .finally(() => { if (btn) { btn.disabled = false; btn.textContent = orig || '立即采集'; } });
+}
+function toggleHotspotForm() { $('hotspot_form').style.display = $('hotspot_form').style.display === 'none' ? 'block' : 'none'; }
+function createHotspot() {
+  const body = {
+    title: $('hs_title').value.trim(),
+    category: $('hs_category').value.trim(),
+    description: $('hs_description').value.trim(),
+    keywords: $('hs_keywords').value.split(/[,，]/).map((s) => s.trim()).filter(Boolean),
+    source: 'manual',
+    source_url: $('hs_url').value.trim(),
+  };
+  if (!body.title) { alert('请填写标题'); return; }
+  api('/hotspots', { method: 'POST', body }).then(() => {
+    $('hs_title').value = $('hs_category').value = $('hs_description').value = $('hs_keywords').value = $('hs_url').value = '';
+    toggleHotspotForm();
+    loadHotspots();
+  }).catch((e) => alert('添加失败：' + e.message));
+}
+function hotspotCounts() {
+  const counts = {};
+  HOTSPOTS.forEach((h) => { const c = h.category || '未分类'; counts[c] = (counts[c] || 0) + 1; });
+  return counts;
+}
+function renderHotspotFilters() {
+  const counts = hotspotCounts();
+  const cats = Object.keys(counts).sort((a, b) => counts[b] - counts[a]);
+  const chip = (label, cat) =>
+    `<button class="btn small ${HOTSPOT_CAT === cat ? '' : 'secondary'}" onclick="setHotspotCat('${cat}')">${label}</button>`;
+  const newChip = NEW_HOTSPOTS.size
+    ? [chip(`本次新增 ${NEW_HOTSPOTS.size}`, '__new__')]
+    : [];
+  $('hotspot_filters').innerHTML = [chip(`全部 ${HOTSPOTS.length}`, '')]
+    .concat(newChip)
+    .concat(cats.map((c) => chip(`${c} ${counts[c]}`, c)))
+    .join(' ');
+  renderHotspotSort();
+}
+function renderHotspotSort() {
+  const box = $('hotspot_sort');
+  if (!box) return;
+  const btn = (label, sort) =>
+    `<button class="btn small ${HOTSPOT_SORT === sort ? '' : 'secondary'}" onclick="setHotspotSort('${sort}')">${label}</button>`;
+  box.innerHTML = '<span class="muted" style="font-size:12px">排序：</span>' + btn('按热度', 'hot') + ' ' + btn('按最近更新', 'recent');
+}
+function setHotspotSort(sort) { HOTSPOT_SORT = sort; renderHotspots(); renderHotspotSort(); }
+function setHotspotCat(cat) { HOTSPOT_CAT = cat; renderHotspotFilters(); renderHotspots(); }
+function renderHotspots() {
+  let items = HOTSPOT_CAT === '__new__'
+    ? HOTSPOTS.filter((h) => NEW_HOTSPOTS.has(h.id))
+    : (HOTSPOT_CAT ? HOTSPOTS.filter((h) => (h.category || '未分类') === HOTSPOT_CAT) : HOTSPOTS.slice());
+  if (HOTSPOT_SORT === 'recent') {
+    items.sort((a, b) => new Date(b.last_updated || 0) - new Date(a.last_updated || 0));
+  }
+  if (!items.length) { $('hotspot_list').innerHTML = '<p class="muted">该板块暂无热点，可点击「立即采集」或「添加热点」。</p>'; return; }
+  $('hotspot_list').innerHTML = items.map((h) => {
+    const hist = (h.heat_history || []).slice(-8).map((x) => x.score).join(', ');
+    const isNew = NEW_HOTSPOTS.has(h.id);
+    return `<div class="card">
+      <div class="row" style="justify-content:space-between;align-items:center">
+        <h2 style="margin:0">${h.title} ${trendBadge(h.trend)}${isNew ? ' <span class="badge rising">NEW</span>' : ''}${h.is_sensitive ? ' <span class="badge rejected">敏感</span>' : ''}</h2>
+        <span class="score">${h.hot_score}</span></div>
+      <p class="muted">${h.category || '-'}${h.source ? ' · ' + h.source : ''}</p>
+      ${h.source_url ? urlRow(h) : ''}
+      ${h.description ? `<p>${h.description}</p>` : ''}
+      ${(h.keywords||[]).length ? `<p><b>关键词：</b>${h.keywords.join('、')}</p>` : ''}
+      <div class="bar"><span style="width:${Math.min(100,h.hot_score)}%"></span></div>
+      <p class="hint">热度快照：${hist || '-'}${h.last_updated ? ' · 更新于 ' + new Date(h.last_updated).toLocaleString() : ''}</p>
+      <div class="row" style="margin-top:8px">
+        <button class="btn small" onclick="openHotspotEdit(${h.id})">编辑</button>
+        <button class="btn small danger" onclick="deleteHotspot(${h.id})">删除</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+function urlRow(h) {
+  const u = h.source_url;
+  const expanded = URL_EXPANDED.has(h.id);
+  const shown = expanded ? u : (u.length > 42 ? u.slice(0, 42) + '…' : u);
+  return `<div style="margin:2px 0;font-size:12px">
+    <span style="cursor:pointer;color:#7a7a7a;word-break:break-all;text-decoration:underline dotted" onclick="copyUrl(${h.id})" title="点击复制链接">${shown}</span>
+    <button class="btn small secondary" style="padding:0 8px;margin-left:6px" onclick="toggleUrl(${h.id})">${expanded ? '收起' : '展开'}</button>
+  </div>`;
+}
+function copyUrl(id) {
+  const h = HOTSPOTS.find((x) => x.id === id);
+  const u = h && h.source_url;
+  if (!u) { alert('无链接'); return; }
+  const done = () => alert('已复制链接');
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(u).then(done, () => fallbackCopy(u, done));
+  } else {
+    fallbackCopy(u, done);
+  }
+}
+function fallbackCopy(text, done) {
+  const ta = document.createElement('textarea');
+  ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0';
+  document.body.appendChild(ta); ta.select();
+  try { document.execCommand('copy'); done(); } catch (e) { alert('复制失败，请手动复制：' + text); }
+  document.body.removeChild(ta);
+}
+function toggleUrl(id) { URL_EXPANDED.has(id) ? URL_EXPANDED.delete(id) : URL_EXPANDED.add(id); renderHotspots(); }
+function loadHotspots() {
+  return api('/hotspots').then((items) => {
+    HOTSPOTS = items || [];
+    renderHotspotFilters();
+    renderHotspots();
+  });
+}
+async function runMatching() {
+  setHotspotTab('match');
+  const box = $('match_result');
+  const st = $('match_status');
+  const btn = $('hs_match_btn');
+  if (btn) btn.disabled = true;
+  if (st) { st.textContent = '匹配中…'; st.style.color = '#666'; }
+  box.innerHTML = '<p class="muted">AI 匹配中…（先由程序筛出候选热点，再逐个商品交给大模型挑选真实可结合的机会，约 5~20 秒）</p>';
+  try {
+    const created = await api('/matching/run', { method: 'POST', body: { hotspot_limit: 60, judge_limit: 10 } });
+    if (!created || !created.length) {
+      box.innerHTML = '<p class="muted">暂无匹配度足够高的机会，可稍后重试或先采集更多热点。</p>';
+      if (st) { st.textContent = '本次没有新的机会卡'; st.style.color = '#a05a00'; }
+      return;
+    }
+    if (st) { st.textContent = '已完成：' + created.length + ' 条机会卡'; st.style.color = '#1a7f37'; }
+    const prodMap = {};
+    PRODUCTS.forEach((p) => { prodMap[p.id] = p.name; });
+    const hotMap = {};
+    HOTSPOTS.forEach((h) => { hotMap[h.id] = h; });
+    box.innerHTML = `<h3 style="margin:0 0 8px">AI 匹配结果（${created.length} 条机会卡）</h3>` + created.map((m) => {
+      const pName = prodMap[m.product_id] || ('商品#' + m.product_id);
+      const h = hotMap[m.hotspot_id] || {};
+      const s = m.subscores || {};
+      return `<div class="card">
+        <div class="row" style="justify-content:space-between;align-items:center">
+          <h2 style="margin:0">${pName} ✕ ${h.title || ('热点#' + m.hotspot_id)}</h2>
+          <span class="score">${m.score}</span></div>
+        <p class="muted">R ${s.r ?? '-'} · T ${s.t ?? '-'} · A ${s.a ?? '-'} · P ${s.p ?? '-'} · C ${s.c ?? '-'} · 状态 ${m.status || '-'}</p>
+        ${m.relevance_reason ? `<p><b>关联逻辑：</b>${m.relevance_reason}</p>` : ''}
+        ${m.marketing_idea ? `<p><b>创意方向：</b>${m.marketing_idea}</p>` : ''}
+        ${m.content_form ? `<p><b>建议形式：</b>${m.content_form}</p>` : ''}
+        ${(m.risk || []).length ? `<p><b>风险提示：</b>${m.risk.join('；')}</p>` : ''}
+      </div>`;
+    }).join('');
+  } catch (e) {
+    const msg = String((e && e.message) || e);
+    box.innerHTML = '<p style="color:#c00">匹配失败：' + msg + '</p>';
+    if (st) { st.textContent = '匹配失败'; st.style.color = '#c00'; }
+  } finally {
+    if (btn) btn.disabled = false;
+  }
+}
+function openHotspotEdit(id) {
+  const h = HOTSPOTS.find((x) => x.id === id);
+  if (!h) return;
+  $('he_id').value = h.id;
+  $('he_title').value = h.title || '';
+  $('he_category').value = h.category || '';
+  $('he_description').value = h.description || '';
+  $('he_keywords').value = (h.keywords || []).join(', ');
+  $('he_url').value = h.source_url || '';
+  $('hotspot_modal').style.display = 'flex';
+}
+function saveHotspot() {
+  const id = $('he_id').value;
+  const body = {
+    title: $('he_title').value.trim(),
+    category: $('he_category').value.trim(),
+    description: $('he_description').value.trim(),
+    keywords: $('he_keywords').value.split(/[,，]/).map((s) => s.trim()).filter(Boolean),
+    source_url: $('he_url').value.trim(),
+  };
+  api(`/hotspots/${id}`, { method: 'PUT', body }).then(() => { closeModal('hotspot_modal'); loadHotspots(); }).catch((e) => alert('保存失败：' + e.message));
+}
+function deleteHotspot(id) {
+  if (!confirm('确定删除该热点？')) return;
+  api(`/hotspots/${id}`, { method: 'DELETE' }).then(loadHotspots).catch((e) => alert('删除失败：' + e.message));
+}
+
+// ---- 促销利润防护 ----
+let PF_SESSION = 'web-' + Math.random().toString(36).slice(2, 10);
+let PF_STATE = { product: null, params: null };
+const PF_QUICK = [
+  '我打算上两件八折，再发 29 元券，卖 SR-72 会亏吗？',
+  '只发 29 元券呢？',
+  '不促销的利润是多少？',
+  '帮我把这个价格直接改到 280',
+];
+
+function money(v) { return (v < 0 ? '−' : '') + Math.abs(+v).toFixed(2); }
+
+function addMsg(text, who, trace) {
+  const box = document.createElement('div');
+  box.className = 'msg ' + who;
+  let html = `<div class="bubble">${text}</div>`;
+  if (trace && trace.length) {
+    html += '<div class="trace">' + trace.map((t) =>
+      `<span class="chip${t.error ? ' warn' : ''}">${t.error ? '⚠' : '🔧'} ${t.label}</span>`).join('') + '</div>';
+  }
+  box.innerHTML = html;
+  $('pf_msgs').appendChild(box);
+  $('pf_msgs').scrollTop = $('pf_msgs').scrollHeight;
+  return box;
+}
+
+function addThinking() {
+  const box = document.createElement('div');
+  box.className = 'msg bot';
+  box.id = 'pf_thinking';
+  box.innerHTML = '<div class="bubble muted">正在判断该调哪个工具…</div>';
+  $('pf_msgs').appendChild(box);
+  $('pf_msgs').scrollTop = $('pf_msgs').scrollHeight;
+}
+
+function clearThinking() {
+  const box = $('pf_thinking');
+  if (box) box.remove();
+}
+
+function sendMessage() {
+  const text = ($('pf_input').value || '').trim();
+  if (!text) return;
+  $('pf_input').value = '';
+  addMsg(text, 'me');
+  const pid = $('pf_product').value ? +$('pf_product').value : null;
+  addThinking();
+  api('/agent/chat', { method: 'POST', body: { session_key: PF_SESSION, message: text, product_id: pid } })
+    .then((r) => {
+      clearThinking();
+      addMsg(r.reply, 'bot', r.trace);
+      if (r.action === 'bill') {
+        PF_STATE.product = r.product; PF_STATE.params = r.params; renderBill(r);
+        if (r.fallback) addMsg('（这次模型的话里有引擎算不出来的数字，已改用它不得越界的模板版）', 'bot');
+      } else if (r.action === 'clarify') {
+        $('pf_bill').innerHTML = '<p class="muted">等你补齐口径后才会出数字。</p>';
+        $('pf_param').innerHTML = ''; $('pf_options').innerHTML = '';
+      } else if (r.action === 'refuse') {
+        $('pf_options').innerHTML = '';
+      }
+      if (r.scan) renderScanTable(r.scan);
+    })
+    .catch((e) => { clearThinking(); addMsg('出错：' + e.message, 'bot'); });
+}
+
+function renderBill(r) {
+  const b = r.bill;
+  const risk = r.verdict === 'risk';
+  const cls = (v) => (v < 0 ? 'neg' : 'pos');
+  const rows = [
+    ['成交额（商品）', money(b['成交额'])],
+    ['买家另付运费', money(b['买家运费'])],
+    ['商品成本', money(b['商品成本'])],
+    ['国内运费', money(b['国内运费'])],
+    ['平台佣金', money(b['平台佣金'])],
+    ['利润', money(b['利润'])],
+    ['毛利率', b['利润率'] + '%'],
+  ].map(([k, v]) => `<div class="name">${k}</div><div class="val ${k === '利润' ? cls(b['利润']) : ''}">${v}</div>`).join('');
+
+  const ladder = (r.ladder || []).map((row) => `<tr><td>${row['方案']}</td><td>${money(row['成交额'])}</td>
+      <td class="${row['利润'] < 0 ? 'neg' : ''}">${money(row['利润'])}</td>
+      <td class="${row['利润'] < 0 ? 'neg' : ''}">${row['利润率']}%</td></tr>`).join('');
+
+  $('pf_bill').innerHTML = `
+    <div class="card" style="margin-bottom:0">
+      <div class="row" style="justify-content:space-between;align-items:center">
+        <h2 style="margin:0">账单 · ${(r.product || {}).name || b.sku || ''}</h2>
+        <span class="badge ${risk ? 'verdict-risk' : 'verdict-ok'}">${risk ? '跌破 ' + r.floor_pct + '% 红线' : '在红线以上'}</span>
+      </div>
+      <div class="kv" style="margin-top:12px">${rows}</div>
+      ${ladder ? `<p style="margin:14px 0 6px"><b>优惠逐项归因（三项都算了一遍）</b></p>
+        <table><tr><th>方案</th><th>成交额</th><th>利润</th><th>毛利率</th></tr>${ladder}</table>` : ''}
+      <p class="hint">每个数字都可追溯到引擎字段；点下面"改参数重算"可以现场验证。</p>
+    </div>`;
+  renderOptions(r.options || []);
+  renderParamEditor();
+}
+
+function renderOptions(options) {
+  if (!options.length) { $('pf_options').innerHTML = ''; return; }
+  $('pf_options').innerHTML = `<div class="card" style="margin-bottom:0"><h2>可选调整（按利润从高到低）</h2>
+    ${options.map((o) => `<div class="row" style="justify-content:space-between;align-items:center;border-bottom:1px solid var(--border);padding:8px 0">
+      <div style="flex:1"><b>${o['名称']}</b><br><span class="muted">${o['说明']}</span></div>
+      <div style="text-align:right;white-space:nowrap"><span class="${o['利润'] < 0 ? 'neg' : 'pos'}">${money(o['利润'])} 元</span>
+      <br><span class="muted">${o['利润率']}%</span></div>
+    </div>`).join('')}
+    <p class="hint">方案卡只给建议，不会自动执行——要不要改，商家说了算。</p></div>`;
+}
+
+function renderParamEditor() {
+  const p = PF_STATE.params || {};
+  const product = PF_STATE.product || {};
+  $('pf_param').innerHTML = `<div class="card" style="margin-bottom:0"><h2>改参数重算（现场验证用）</h2>
+    <div class="paramgrid">
+      <div><label>标价</label><input id="pp_price" type="number" step="0.01" value="${p['标价'] ?? ''}" /></div>
+      <div><label>进货成本</label><input id="pp_cost" type="number" step="0.01" value="${p['进货成本'] ?? ''}" /></div>
+      <div><label>件数</label><input id="pp_qty" type="number" step="1" value="${p['件数'] ?? 1}" /></div>
+      <div><label>折扣率（八折 = 0.8）</label><input id="pp_tier" type="number" step="0.01" value="${p['折扣率'] ?? 1}" /></div>
+      <div><label>券额（元）</label><input id="pp_coupon" type="number" step="0.01" value="${p['券额'] ?? 0}" /></div>
+      <div><label>毛利率红线（%）</label><input id="pp_floor" type="number" step="0.5" value="5" /></div>
+    </div>
+    <button class="btn" style="margin-top:10px" onclick="recalc()">重算</button>
+    <span class="hint">例如把进货成本改成 260，看它是否立刻变红。</span></div>`;
+}
+
+function recalc() {
+  const body = {
+    sku: (PF_STATE.product || {}).name || '',
+    product_id: (PF_STATE.product || {}).id || null,
+    price: +$('pp_price').value,
+    unit_cost: +$('pp_cost').value,
+    qty: +$('pp_qty').value,
+    tier_rate: +$('pp_tier').value,
+    coupon: +$('pp_coupon').value,
+    floor_pct: +$('pp_floor').value,
+    commission: 0.06,
+    freight_dom: 19.9,
+    ship_fee: 19.9,
+  };
+  api('/agent/calc', { method: 'POST', body })
+    .then((r) => {
+      PF_STATE.params = { '标价': body.price, '进货成本': body.unit_cost, '件数': body.qty, '折扣率': body.tier_rate, '券额': body.coupon };
+      renderBill({ bill: { ...r.bill, sku: body.sku }, ladder: r.ladder, options: r.options, verdict: r.verdict, floor_pct: body.floor_pct, product: PF_STATE.product, params: PF_STATE.params });
+    })
+    .catch((e) => alert('重算失败：' + e.message));
+}
+
+function resetSession() {
+  api('/agent/reset', { method: 'POST', body: { session_key: PF_SESSION } }).then(() => {
+    PF_SESSION = 'web-' + Math.random().toString(36).slice(2, 10);
+    PF_STATE = { product: null, params: null };
+    $('pf_msgs').innerHTML = '';
+    $('pf_bill').innerHTML = '<p class="muted">已重置，重新说一句话试试。</p>';
+    $('pf_options').innerHTML = ''; $('pf_param').innerHTML = '';
+  });
+}
+
+function loadAgentMode() {
+  api('/settings/llm').then((s) => {
+    const box = $('pf_mode');
+    if (s.has_key) {
+      box.textContent = `AI 模式：${s.model}`;
+      box.style.background = 'rgba(37,99,235,.12)';
+      box.style.color = '#1d4ed8';
+    } else {
+      box.textContent = '规则模式（未配 Key + 点设置里的大模型接入即启用对话 Agent）';
+      box.style.color = '#6b7280';
+    }
+  }).catch(() => {});
+}
+
+function loadPolicy() {
+  api('/agent/policy').then((p) => {
+    $('policy_line').textContent = `口径：佣金 ${(p.defaults.commission_rate * 100).toFixed(0)}% · 买家运费 ${p.defaults.ship_fee} · 满两件 ${(p.defaults.tier_discounts['2'] * 10).toFixed(1)} 折 · 红线 ${p.profit_floor_pct}%`;
+  }).catch(() => { $('policy_line').textContent = ''; });
+}
+
+let PROMO = { qty: 2, tier: 0.8, coupon: 29 };   // 体检用的默认活动，来自「设置 · 计价口径」
+
+function promoLabel(d) {
+  const zhe = (d.tier * 10).toFixed(1).replace(/\.0$/, '');
+  const parts = [`满 ${d.qty} 件 ${zhe} 折`];
+  if (d.coupon > 0) parts.push(`\u00a5${d.coupon} 券`);
+  return parts.join(' + ');
+}
+
+function loadPromoDefaults() {
+  return api('/settings/policy').then((p) => {
+    const d = p.promo_defaults || {};
+    PROMO = { qty: d.qty || 2, tier: d.tier == null ? 0.8 : d.tier, coupon: d.coupon == null ? 29 : d.coupon };
+    return PROMO;
+  }).catch(() => PROMO);
+}
+
+function prefillScan() {
+  return loadPromoDefaults().then((d) => {
+    if ($('scan_qty')) $('scan_qty').value = d.qty;
+    if ($('scan_tier')) $('scan_tier').value = d.tier;
+    if ($('scan_coupon')) $('scan_coupon').value = d.coupon;
+    return d;
+  });
+}
+
+function loadProfitBanner() {
+  const pid = $('gen_product').value ? +$('gen_product').value : null;
+  if (!pid) return;
+  loadPromoDefaults().then((d) => {
+    api(`/agent/product/${pid}/guard?qty=${d.qty}&tier=${d.tier}&coupon=${d.coupon}`).then((r) => {
+      if (!r || !r.text) { $('profit_banner').innerHTML = ''; return; }
+      const cls = r.verdict === 'risk' ? 'risk' : 'ok';
+      $('profit_banner').innerHTML = `<div class="banner ${cls}"><b>促销体检（${promoLabel(d)}）：</b>${r.text}
+        <button class="btn small ${cls === 'risk' ? '' : 'secondary'}" style="margin-left:8px" onclick="jumpToProfit(${pid})">去测算</button></div>`;
+    }).catch(() => { $('profit_banner').innerHTML = ''; });
+  });
+}
+
+function jumpToProfit(pid) {
+  document.querySelectorAll('nav button').forEach((b) => b.classList.remove('active'));
+  document.querySelectorAll('.panel').forEach((p) => p.classList.remove('active'));
+  document.querySelector('nav button[data-panel="profit"]').classList.add('active');
+  $('profit').classList.add('active');
+  if (pid) $('pf_product').value = pid;
+  PF_STATE = { product: PRODUCTS.find((x) => x.id === pid) || null, params: null };
+  if (!$('pf_scan').children.length) runStoreScan();
+  $('pf_input').value = '我打算上两件八折，再发 29 元券，这款会亏吗？';
+  if (!$('pf_msgs').children.length) sendMessage();
+}
+
+function onPfProductChange() {
+  const pid = $('pf_product').value ? +$('pf_product').value : null;
+  PF_STATE.product = PRODUCTS.find((x) => x.id === pid) || null;
+  PF_STATE.params = null;
+}
+
+// ---- 商品成本档案与利润联动 ----
+// ---- 全店体检（差异化：每款用自己的红线） ----
+function runStoreScan() {
+  $('scan_summary').textContent = '扫描中…';
+  const q = $('scan_qty').value || 2;
+  const t = $('scan_tier').value || 1;
+  const c = $('scan_coupon').value || 0;
+  api(`/agent/store-scan?qty=${q}&tier=${t}&coupon=${c}`)
+    .then((r) => renderScanTable(r))
+    .catch((e) => { $('scan_summary').textContent = '扫描失败：' + e.message; });
+}
+
+function renderScanTable(r) {
+  if (!r || !r.items) { $('scan_summary').textContent = '没有可扫的商品'; return; }
+  $('scan_summary').innerHTML = `<b>${r.text}</b>`;
+    const rows = r.items.map((it) => {
+      if (it.status === 'missing' || it.status === 'error') {
+        return `<tr><td><b>${it.name}</b></td><td colspan="5" class="muted">${it.hint || '缺进货成本'}</td><td><span class="muted">算不了</span></td></tr>`;
+      }
+      const cls = it.status === 'risk' ? 'neg' : 'pos';
+      const head = it.headroom == null ? '—'
+        : `<span class="${it.headroom < 0 ? 'neg' : 'pos'}">${it.headroom >= 0 ? '+' : '−'}${Math.abs(it.headroom).toFixed(2)}</span>`;
+      let verdict;
+      if (it.status === 'risk') {
+        verdict = it.profit < 0
+          ? '<span class="neg">会亏本</span>'
+          : '<span class="neg">赚太少</span>';
+      } else {
+        verdict = '<span class="pos">可以做</span>';
+      }
+      return `<tr>
+        <td><b>${it.name}</b><br><span class="muted">进价 ${it.cost} / 标价 ${it.price}</span></td>
+        <td>${it.unit_price}</td>
+        <td class="${cls}">${it.profit >= 0 ? '+' : '−'}${Math.abs(it.profit).toFixed(2)}</td>
+        <td class="${cls}">${it.margin.toFixed(1)}%</td>
+        <td>${it.floor_pct}%</td>
+        <td>${head}</td>
+        <td>${verdict}</td>
+      </tr>`;
+    }).join('');
+    $('pf_scan').innerHTML = `<table style="margin-top:8px">
+      <tr><th>商品</th><th>单件成交价</th><th>利润</th><th>毛利率</th><th>自身红线</th><th>还能让价</th><th>判定</th></tr>
+      ${rows}</table>
+      <p class="hint"><b>会亏本</b>＝这套活动铺下来，卖一件倒贴钱；<b>赚太少</b>＝还有钱赚，但低于这款自己的毛利率红线；<b>可以做</b>＝过了红线。<br>
+      "还能让价"＝单件成交价减去保住红线所需的最低价，负数表示已经低于底线。</p>`;
+}
+
+function fillProductProfit(p) {
+  if (!p || !p.id) return;
+  api(`/agent/product/${p.id}/guard?qty=1&tier=1&coupon=0`).then((r) => {
+    const cell = $(`pfit_${p.id}`);
+    if (!cell) return;
+    if (!r || !r.bill) { cell.textContent = '—'; return; }
+    const v = r.bill['利润'];
+    const m = r.bill['利润率'];
+    cell.innerHTML = `<b class="${v < 0 ? 'neg' : 'pos'}">${v >= 0 ? '+' : ''}${v.toFixed(2)}</b><br><span class="muted">${m.toFixed(1)}%</span>`;
+  }).catch(() => {
+    const cell = $(`pfit_${p.id}`);
+    if (cell) cell.textContent = '缺成本';
+  });
+}
+
+function refreshProductCost(pid) {
+  api(`/products/${pid}/cost`).then((r) => {
+    const c = (r && r.cost) || {};
+    $('pe_freight_intl').value = c.freight_intl ?? '';
+    $('pe_freight_dom').value = c.freight_dom ?? '';
+    $('pe_floor').value = c.profit_floor_pct ?? '';
+  }).catch(() => {});
+}
+
+function previewProductProfit(pid) {
+  api(`/agent/product/${pid}/guard?qty=1&tier=1&coupon=0`).then((r) => {
+    if (!r || !r.bill) { $('pe_preview').textContent = '填完进货成本后这里显示单件利润'; return; }
+    const v = r.bill['利润'];
+    const m = r.bill['利润率'];
+    $('pe_preview').innerHTML = `按当前档案：单件利润 <b class="${v < 0 ? 'neg' : 'pos'}">${v >= 0 ? '+' : ''}${v.toFixed(2)} 元</b>（毛利率 ${m.toFixed(1)}%，红线见口径）`;
+  }).catch(() => { $('pe_preview').textContent = '缺进货成本，先在上面填一下'; });
+}
+
+// ---- 设置：大模型接入 ----
+let LLM_PROVIDERS = [];
+
+function loadProviders() {
+  return api('/settings/llm/providers').then((r) => {
+    LLM_PROVIDERS = r.providers || [];
+    $('llm_provider').innerHTML = LLM_PROVIDERS
+      .map((p) => `<option value="${p.key}">${p.label}</option>`).join('');
+    const def = LLM_PROVIDERS.find((p) => p.key === (r.default || 'deepseek')) || LLM_PROVIDERS[0];
+    if (def) {
+      $('llm_provider').value = def.key;
+      $('llm_base').value = def.base_url;
+      $('llm_model').value = def.model;
+      $('llm_provider_note').textContent = def.note || '';
+    }
+    return LLM_PROVIDERS;
+  }).catch(() => []);
+}
+
+function providerByKey(key) {
+  return LLM_PROVIDERS.find((p) => p.key === key);
+}
+
+function onProviderChange() {
+  const p = providerByKey($('llm_provider').value);
+  if (!p) return;
+  $('llm_base').value = p.base_url;
+  $('llm_model').value = p.model;
+  $('llm_provider_note').textContent = p.note || '';
+}
+
+function loadLLM() {
+  api('/settings/llm').then((s) => {
+    // 没配 Key 时不要用后端默认值覆盖下拉框：保持目录里的默认服务商（DeepSeek）
+    if (s.has_key) {
+      const key = s.provider || '';
+      if (key && providerByKey(key)) {
+        $('llm_provider').value = key;
+        $('llm_provider_note').textContent = (providerByKey(key).note || '');
+      }
+      $('llm_base').value = s.base_url || '';
+      $('llm_model').value = s.model || '';
+    }
+    $('llm_status').innerHTML = s.has_key
+      ? `已配置：${s.key_masked} · 模型 ${s.model} · ${s.is_mock ? '未生效' : '真实调用中'}`
+      : '当前是 Mock 模式（未配置 Key）。测算与追问不受影响，只有措辞由模板生成。';
+  }).catch((e) => { $('llm_status').textContent = '读取失败：' + e.message; });
+}
+
+function llmBody() {
+  return { api_key: $('llm_key').value.trim(), base_url: $('llm_base').value.trim(), model: $('llm_model').value.trim() };
+}
+
+function testLLM() {
+  const body = llmBody();
+  if (!body.api_key) { alert('先填 API Key'); return; }
+  $('llm_status').textContent = '测试中…';
+  api('/settings/llm/test', { method: 'POST', body }).then((r) => {
+    $('llm_status').innerHTML = r.ok
+      ? `✅ 连通：${r.ms}ms · 模型 ${r.model} · 回复「${r.reply || '（空）'}」`
+      : `❌ 失败（${r.ms}ms）：${r.error}`;
+  }).catch((e) => { $('llm_status').textContent = '测试请求失败：' + e.message; });
+}
+
+function saveLLM() {
+  const body = llmBody();
+  if (!body.api_key) { alert('先填 API Key'); return; }
+  api('/settings/llm', { method: 'POST', body }).then((s) => {
+    $('llm_key').value = '';
+    loadLLM();
+    alert('已启用：' + s.key_masked);
+  }).catch((e) => alert('保存失败：' + e.message));
+}
+
+function clearLLM() {
+  api('/settings/llm', { method: 'DELETE' }).then(() => { $('llm_key').value = ''; loadLLM(); })
+    .catch((e) => alert('清除失败：' + e.message));
+}
+
+// ---- 设置：计价口径 ----
+function loadPolicyForm() {
+  api('/settings/policy').then((p) => {
+    const c = p.config || {};
+    $('pol_commission').value = ((c.commission_rate ?? 0.06) * 100).toFixed(1);
+    $('pol_base').value = c.commission_base === 'gmv' ? 'gmv' : 'gmv_after_coupon';
+    $('pol_ship').value = c.ship_fee ?? 19.9;
+    $('pol_freightdom').value = c.freight_dom ?? 19.9;
+    $('pol_floor').value = c.profit_floor_pct ?? 5;
+    $('pol_tier2').value = (c.tier_discounts || {})['2'] ?? 0.8;
+    $('pol_tier3').value = (c.tier_discounts || {})['3'] ?? 0.75;
+    $('pol_coupon').value = c.default_coupon ?? 29;
+    $('pol_borne').value = c.coupon_borne_by || 'merchant';
+    $('pol_name').value = c.name || '默认口径';
+    $('pol_status').textContent = p.note || '';
+  }).catch((e) => { $('pol_status').textContent = '读取失败：' + e.message; });
+}
+
+function policyBody() {
+  const discounts = { '2': parseFloat($('pol_tier2').value) };
+  const t3 = $('pol_tier3').value;
+  if (t3 !== '') discounts['3'] = parseFloat(t3);
+  return {
+    name: $('pol_name').value.trim() || '默认口径',
+    commission_rate: parseFloat($('pol_commission').value) / 100,
+    commission_base: $('pol_base').value,
+    ship_fee: parseFloat($('pol_ship').value),
+    freight_dom: parseFloat($('pol_freightdom').value),
+    profit_floor_pct: parseFloat($('pol_floor').value),
+    tier_discounts: discounts,
+    default_coupon: parseFloat($('pol_coupon').value || 0),
+    coupon_borne_by: $('pol_borne').value,
+  };
+}
+
+function savePolicy() {
+  api('/settings/policy', { method: 'POST', body: policyBody() }).then(() => {
+    $('pol_status').textContent = '已保存，立即生效（促销体检、全店体检的默认值已同步）。';
+    loadPolicy();
+    prefillScan();
+    loadProducts();
+    loadProfitBanner();
+  }).catch((e) => alert('保存失败：' + e.message));
+}
+
+function resetPolicy() {
+  if (!confirm('恢复默认口径？')) return;
+  api('/settings/policy/reset', { method: 'POST' }).then(() => {
+    loadPolicyForm();
+    loadPolicy();
+    prefillScan();
+    loadProducts();
+    loadProfitBanner();
+  }).catch((e) => alert('恢复失败：' + e.message));
+}
+
+// 初始化
+loadProducts(); loadPlatforms(); loadContent(); loadHotspots(); loadPolicy(); loadProviders().then(() => loadLLM()); loadPolicyForm(); loadAgentMode();
+prefillScan();
+$('pf_quick').innerHTML = PF_QUICK.map((q) => `<span class="chip" onclick="$('pf_input').value='${q}';sendMessage()">${q}</span>`).join('');
+</script>
+</body>
+</html>

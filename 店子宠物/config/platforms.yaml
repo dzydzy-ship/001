@@ -1,0 +1,100 @@
+# 平台策略配置库：机器可读的硬性限制 + 平台算法要点。
+# 详细写作方法（标题公式、钩子、结构、红线）放在 platform_skill_<platform>.md，
+# 生成时会被注入提示词；这里只放必须被程序校验的硬性参数。
+# 注意：算法描述是公开资料 + 运营常识的归纳，平台规则会变化，正式投放前请以官方为准。
+platforms:
+  xiaohongshu:
+    name: 小红书
+    type: 种草型
+    strategy: 生活场景、使用体验、细节展示、真实感
+    algorithm: 双列瀑布流；首图+标题决定点击率，点击后互动（收藏>评论>点赞）决定第二波推荐，好内容再吃搜索长尾流量。
+    core_metrics: [点击率, 收藏率, 评论率, 搜索长尾]
+    skill: platform_skill_xiaohongshu.md
+    title_max_length: 20
+    tags_max: 10
+    cta_style: 自然引导关注与收藏，避免硬广
+    tone: 真实、亲切、第一人称体验
+    emoji: true
+    forbidden_words: [最, 第一, 国家级, 顶级, 绝对, 根治, 治疗, 100%, 全网最低]
+    structures:
+      - 场景引入
+      - 使用体验
+      - 细节与差异点
+      - 互动引导
+
+  bilibili:
+    name: B站
+    type: 中长视频/测评
+    strategy: 信息密度、实测对比、干货教程、真诚不端着
+    algorithm: 推荐+关注双引擎；封面与标题决定点击，完播率是第一指标，其次三连（点赞/投币/收藏）与弹幕评论；分区和标签决定初始流量池，长视频可被搜索与合集二次分发。
+    core_metrics: [完播率, 三连率, 弹幕评论, 粉丝转化]
+    skill: platform_skill_bilibili.md
+    title_max_length: 40
+    tags_max: 10
+    cta_style: 引导三连、评论区讨论、关注追更
+    tone: 干货、真诚、有信息密度，适度玩梗
+    emoji: false
+    forbidden_words: [绝对, 100%, 全网最低, 根治, 治疗, 第一]
+    structures:
+      - 30秒开场钩子
+      - 痛点或悬念
+      - 干货或测评主体
+      - 结论与三连引导
+
+  douyin:
+    name: 抖音
+    type: 短视频
+    strategy: 3秒抓人、痛点直击、卖点演示、口播节奏
+    algorithm: 推荐流；前3秒留存与完播率决定是否进下一个流量池，其次互动率（点赞/评论/转发）与关注；内容标签与初始垂类决定推给谁。
+    core_metrics: [3秒留存, 完播率, 互动率, 转粉率]
+    skill: platform_skill_douyin.md
+    title_max_length: 55
+    tags_max: 5
+    cta_style: 口播加字幕引导点赞评论主页
+    tone: 快节奏、口语化、有钩子
+    emoji: false
+    forbidden_words: [绝对, 100%, 全网最低, 根治, 治疗]
+    structures:
+      - 3秒钩子
+      - 痛点场景
+      - 卖点演示
+      - 行动引导
+
+  kuaishou:
+    name: 快手
+    type: 短视频/直播
+    strategy: 真实感、老铁信任、生活化场景、口播直给
+    algorithm: 发现页+关注页+同城三入口；完播率与互动（评论/点赞/关注）决定推荐，老铁关系与复访权重高；直播与短视频互相导流，真实人设和信任感比精致制作更重要。
+    core_metrics: [完播率, 评论互动, 关注转化, 复访率]
+    skill: platform_skill_kuaishou.md
+    title_max_length: 45
+    tags_max: 6
+    cta_style: 口播直接说「想看的点关注」，评论区聊价格和用法
+    tone: 实在、接地气、像邻居唠嗑，不端着
+    emoji: false
+    forbidden_words: [绝对, 100%, 全网最低, 根治, 治疗, 第一]
+    structures:
+      - 上来就说事（不铺垫）
+      - 用真实场景讲一个具体麻烦
+      - 拿商品当场解决给人看
+      - 说清楚多少钱、适合谁
+      - 自然引导关注评论
+
+  ecommerce:
+    name: 电商详情页
+    type: 搜索与转化
+    strategy: 搜索关键词、规格参数、功能说明、购买决策信息
+    algorithm: 搜索驱动；关键词命中与详情页信息完整度决定转化，用户看参数、看评价、看售后。
+    core_metrics: [搜索关键词命中, 转化率, 停留时长]
+    skill: platform_skill_ecommerce.md
+    title_max_length: 60
+    tags_max: 0
+    cta_style: 参数表加卖点列表加常见问题
+    tone: 客观、专业、信息密度高
+    emoji: false
+    forbidden_words: [虚假, 夸大, 绝对, 100%]
+    structures:
+      - 标题含关键词
+      - 核心卖点列表
+      - 规格参数
+      - 常见问题
